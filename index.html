@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedVeda - Secure Pharmaceutical Supply Chain</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.2/dist/lenis.min.js"></script>
+
+    <style>
+        /* --- macOS Window Theme --- */
+        :root {
+            --primary-color: #4f46e5; /* Indigo-600 */
+            --primary-hover: #4338ca; /* Indigo-700 */
+            --secondary-color: #111827; /* Gray-900 */
+            --bg-color: #e9e9e9; /* Light gray background */
+            --window-bg: #FFFFFF;
+            --border-color: rgba(60, 60, 67, 0.29);
+        }
+
+        /* --- Base & Layout --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: var(--bg-color);
+            color: var(--secondary-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* --- macOS Window Container --- */
+        .macos-browser-window {
+            max-width: 1400px;
+            margin: 3rem auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background-color: var(--window-bg);
+            border: 2px solid var(--border-color);
+        }
+
+        /* --- macOS Title Bar --- */
+        .macos-title-bar {
+            background-color: #f6f6f6;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .macos-buttons { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        /* Canvas for the 3D hero animation */
+        #hero-canvas-3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: radial-gradient(ellipse at center, rgba(28, 39, 58, 1) 0%, rgba(17, 24, 39, 1) 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Styling for the role-based interface cards */
+        .role-card {
+            background-color: #ffffff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            will-change: transform;
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem; 
+            border: 2px solid #e5e7eb; /* Thicker border */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .role-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .role-card .icon-bg {
+            background-color: #e0e7ff; /* Indigo-100 */
+            transition: background-color 0.3s ease;
+        }
+        
+        .role-card:hover .icon-bg {
+            background-color: var(--primary-color);
+        }
+        
+        .role-card .icon-svg {
+             color: var(--primary-color);
+             transition: color 0.3s ease;
+        }
+
+        .role-card:hover .icon-svg {
+            color: white;
+        }
+
+        .card-image {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            height: 100%; 
+            width: auto;
+            opacity: 0;
+            transform: translate(-50%, 100%); 
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out;
+            z-index: 3; 
+            pointer-events: none;
+        }
+
+        .role-card:hover .card-image {
+            opacity: 1;
+            transform: translate(-50%, 0); 
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 2; 
+            background-color: #ffffff;
+            transition: filter 0.4s ease, opacity 0.4s ease;
+        }
+
+        .role-card:hover .card-content {
+            filter: blur(4px);
+            opacity: 0.6;
+        }
+        
+        .fade-in-up, .fade-in-left, .fade-in-right {
+            opacity: 0;
+            transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: opacity, transform;
+        }
+
+        .fade-in-up { transform: translateY(40px); }
+        .fade-in-left { transform: translateX(-60px); }
+        .fade-in-right { transform: translateX(60px); }
+
+        .fade-in-up.visible,
+        .fade-in-left.visible,
+        .fade-in-right.visible {
+            opacity: 1;
+            transform: translateY(0) translateX(0);
+        }
+
+        /* Bolder Font Weights */
+        .font-extrabold { font-weight: 900 !important; }
+        .font-bold { font-weight: 800 !important; }
+        .font-semibold { font-weight: 700 !important; }
+        p, a, span, h4 { font-weight: 500; }
+        nav a, .text-lg { font-weight: 600; }
+        h1, h2, h3 { font-weight: 800; }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="macos-browser-window">
+        <div class="macos-title-bar">
+            <div class="macos-buttons">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+        </div>
+
+        <nav class="bg-white/80 backdrop-blur-md z-50 shadow-sm" style="border-bottom: 2px solid #e5e7eb;">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                 <a href="index.html" class="flex items-center gap-3">
+                     <img src="assets/medchain_logo.svg" alt="MedChain Logo" class="h-8 w-auto" onerror="this.onerror=null;this.src='https://placehold.co/100x32/ffffff/4f46e5?text=Logo';">
+                     <span class="text-2xl font-bold text-gray-800">MedVeda</span>
+                </a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-600 hover:text-indigo-600 transition duration-300">Features</a>
+                    <a href="#roles" class="text-gray-600 hover:text-indigo-600 transition duration-300">Portals</a>
+                    <a href="#about" class="text-gray-600 hover:text-indigo-600 transition duration-300">About</a>
+                    <a href="#" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">Contact Us</a>
+                </div>
+            </div>
+        </nav>
+
+        <header class="relative text-white py-24 md:py-32 overflow-hidden">
+            <canvas id="hero-canvas-3d"></canvas>
+            <div class="hero-content container mx-auto px-6 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+                    Trust in Every Dose.
+                </h1>
+                <p class="text-lg md:text-xl text-gray-300 mb-10 max-w-3xl mx-auto">
+                    MedVeda brings unparalleled security and transparency to the pharmaceutical supply chain using the power of blockchain technology.
+                </p>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-6 py-16 md:py-24">
+            
+            <section id="roles" class="text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4 fade-in-up">Supply Chain Portals</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-12 fade-in-up">
+                    Dedicated interfaces for every participant in the pharmaceutical journey.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    
+                    <a href="admin/index.html" class="role-card fade-in-left">
+                        <img src="actor/1.png" alt="Administrator" class="card-image" onerror="this.onerror=null;this.src='https://placehold.co/200x240/ffffff/4f46e5?text=Admin';">
+                        <div class="card-content p-8">
+                            <div class="icon-bg rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                                <svg class="icon-svg w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402a3.75 3.75 0 00-.625-6.25l-6.402-6.401a3.75 3.75 0 00-5.304 0l-1.902 1.902a3.75 3.75 0 000 5.304l3.202 3.201-3.202 3.202a3.75 3.75 0 000 5.304l1.902 1.902z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12.75 4.5l4.5 4.5" /></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Administrator</h3>
+                            <p class="text-gray-500">Register new products and manage authentic inventory on the blockchain.</p>
+                        </div>
+                    </a>
+
+                    <a href="otp-login/login_medchain.html" class="role-card fade-in-left" style="transition-delay: 0.1s;" onclick="localStorage.setItem('selectedRole', 'distributor')">
+                        <img src="actor/3.png" alt="Distributor" class="card-image" onerror="this.onerror=null;this.src='https://placehold.co/200x240/ffffff/4f46e5?text=Distributor';">
+                         <div class="card-content p-8">
+                            <div class="icon-bg rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                                <svg class="icon-svg w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2-2h8a1 1 0 001-1z" /></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Distributor</h3>
+                            <p class="text-gray-500">Track shipments, verify product handovers, and ensure chain of custody.</p>
+                        </div>
+                    </a>
+
+                    <a href="otp-login/login_medchain.html" class="role-card fade-in-right" style="transition-delay: 0.1s;" onclick="localStorage.setItem('selectedRole', 'pharmacist')">
+                        <img src="actor/2.png" alt="Pharmacist" class="card-image" onerror="this.onerror=null;this.src='https://placehold.co/200x240/ffffff/4f46e5?text=Pharmacist';">
+                        <div class="card-content p-8">
+                            <div class="icon-bg rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                                <svg class="icon-svg w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h6M9 11.25h6m-6 4.5h6M6.75 21v-2.25a2.25 2.25 0 012.25-2.25h6a2.25 2.25 0 012.25 2.25V21" /></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Pharmacist/Hospital</h3>
+                            <p class="text-gray-500">Verify authenticity of incoming stock and dispense medicine to patients securely.</p>
+                        </div>
+                    </a>
+
+                    <a href="otp-login/login_medchain.html" class="role-card fade-in-right" style="transition-delay: 0.2s;" onclick="localStorage.setItem('selectedRole', 'patient')">
+                         <img src="actor/4.png" alt="Patient" class="card-image" onerror="this.onerror=null;this.src='https://placehold.co/200x240/ffffff/4f46e5?text=Patient';">
+                        <div class="card-content p-8">
+                            <div class="icon-bg rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                                <svg class="icon-svg w-10 h-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Patient</h3>
+                            <p class="text-gray-500">Scan your medicine's Unique Identifier code to instantly verify its origin and history.</p>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <section id="features" class="mt-24 md:mt-32">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                    <div class="fade-in-left">
+                        <span class="text-indigo-600 font-semibold">CORE FEATURES</span>
+                        <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-6">Why MedVeda is the Future of Pharmaceutical Safety</h2>
+                        <p class="text-lg text-gray-600 mb-8">
+                            Our platform is built on three pillars that guarantee a safer, more transparent supply chain for everyone.
+                        </p>
+                        <ul class="space-y-6">
+                            <li class="flex items-start gap-4">
+                                <div class="bg-green-100 text-green-700 p-2 rounded-full flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></div>
+                                <div>
+                                    <h4 class="font-bold text-xl">Immutable Verification</h4>
+                                    <p class="text-gray-600">Each product is given a unique, unforgeable digital identity on the blockchain, eliminating counterfeits.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4">
+                                <div class="bg-blue-100 text-blue-700 p-2 rounded-full flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg></div>
+                                <div>
+                                    <h4 class="font-bold text-xl">End-to-End Traceability</h4>
+                                    <p class="text-gray-600">Monitor a medicine's journey in real-time, from the manufacturing lab to your local pharmacy.</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4">
+                                <div class="bg-purple-100 text-purple-700 p-2 rounded-full flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+                                <div>
+                                    <h4 class="font-bold text-xl">Instant Patient Access</h4>
+                                    <p class="text-gray-600">Empower patients to instantly confirm the authenticity and safety of their medication with a simple scan.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="fade-in-right" style="transition-delay: 0.2s;">
+                        <img src="assets/medveda.png" 
+                             alt="A medical professional using a tablet to view secure data, representing the MedVeda platform." 
+                             class="rounded-2xl shadow-2xl object-cover w-full h-full"
+                             onerror="this.onerror=null;this.src='https://placehold.co/600x500/e0e7ff/4f46e5?text=Secure+Supply+Chain';">
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Lenis Smooth Scroll Initialization ---
+        const lenis = new Lenis();
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+        
+        // --- SCENE SETUP ---
+        const canvas = document.getElementById('hero-canvas-3d');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        camera.position.z = 50;
+        
+        // --- MOUSE INTERACTION SETUP ---
+        const mouse = new THREE.Vector2();
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // --- DNA HELIX CREATION ---
+        const helixGroup = new THREE.Group();
+        scene.add(helixGroup);
+
+        const helixRadius = 10;
+        const helixHeight = 100;
+        const numParticles = 400;
+        const turns = 8;
+
+        const particleMaterial = new THREE.MeshStandardMaterial({
+            color: 0x818cf8,
+            metalness: 0.5,
+            roughness: 0.5,
+            emissive: 0x4f46e5,
+            emissiveIntensity: 0.5
+        });
+        const lineMaterial = new THREE.LineBasicMaterial({ 
+            color: 0x6366f1,
+            transparent: true,
+            opacity: 0.3
+        });
+        const particleGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        
+        const particles1 = [];
+        const particles2 = [];
+
+        for (let i = 0; i < numParticles; i++) {
+            const t1 = (i / numParticles) * Math.PI * 2 * turns;
+            const y1 = (i / numParticles - 0.5) * helixHeight;
+            const x1 = helixRadius * Math.cos(t1);
+            const z1 = helixRadius * Math.sin(t1);
+
+            const particle1 = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle1.position.set(x1, y1, z1);
+            particles1.push(particle1);
+            helixGroup.add(particle1);
+
+            const t2 = t1 + Math.PI;
+            const x2 = helixRadius * Math.cos(t2);
+            const z2 = helixRadius * Math.sin(t2);
+
+            const particle2 = new THREE.Mesh(particleGeometry, particleMaterial);
+            particle2.position.set(x2, y1, z2);
+            particles2.push(particle2);
+            helixGroup.add(particle2);
+        }
+
+        for (let i = 0; i < numParticles; i++) {
+            const points = [];
+            points.push(particles1[i].position);
+            points.push(particles2[i].position);
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            helixGroup.add(line);
+        }
+        
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(50, 50, 50);
+        scene.add(pointLight);
+
+        // --- UNIFIED ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate(time) {
+            // Lenis raf is already called at the top level
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+            helixGroup.rotation.y = elapsedTime * 0.1;
+
+            for(let i = 0; i < numParticles; i++) {
+                const p1 = particles1[i];
+                const p2 = particles2[i];
+                const scale = 1 + Math.sin(elapsedTime * 2 + i * 0.5) * 0.1;
+                p1.scale.set(scale, scale, scale);
+                p2.scale.set(scale, scale, scale);
+            }
+
+            helixGroup.rotation.x += (mouse.y * 0.5 - helixGroup.rotation.x) * 0.05;
+            helixGroup.rotation.y += (mouse.x * 0.5 - helixGroup.rotation.y) * 0.05;
+
+            renderer.render(scene, camera);
+        }
+
+        // --- RESPONSIVENESS ---
+        function onWindowResize() {
+            const container = document.querySelector('.macos-browser-window');
+            const header = document.querySelector('header');
+            
+            camera.aspect = container.clientWidth / header.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, header.clientHeight);
+        }
+        window.addEventListener('resize', onWindowResize);
+        onWindowResize(); // Initial call
+
+        animate();
+
+        // --- SCROLL-TRIGGERED ANIMATION FOR PAGE CONTENT ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const delay = parseFloat(entry.target.style.transitionDelay || '0') * 1000;
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, delay);
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        const fadeElements = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
+        fadeElements.forEach(el => observer.observe(el));
+
+    </script>
+</body>
+</html>

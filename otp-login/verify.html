@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Body Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Main Container for the Form */
+        .optin-container {
+            background-color: #ffffff;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            transition: transform 0.3s ease;
+        }
+
+        .optin-container:hover {
+            transform: translateY(-5px);
+        }
+
+        .optin-container h2 {
+            margin-top: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .optin-container p {
+            margin-bottom: 1.5rem;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* Form Grouping */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 768px) {
+            .form-group {
+                flex-direction: row;
+                gap: 0;
+            }
+        }
+
+        /* Email and OTP Input Fields */
+        input[type="email"],
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 0.85rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        @media (min-width: 768px) {
+            input[type="email"],
+            input[type="text"] {
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+        }
+
+        input[type="email"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        /* Submit Button */
+        button[type="submit"] {
+            padding: 0.85rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(45deg, #4a90e2, #50e3c2);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button[type="submit"]:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+
+        @media (min-width: 768px) {
+            button[type="submit"] {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+        }
+
+        button[type="submit"]:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+        }
+
+        /* Message Area for Feedback */
+        #message-area {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.75rem;
+            border-radius: 8px;
+            min-height: 20px;
+        }
+
+        .message-success {
+            background-color: #e6fffa;
+            color: #234e52;
+        }
+
+        .message-error {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="optin-container">
+        <h2>Enter Your OTP</h2>
+        <p>An OTP has been sent to <strong id="user-email">your email</strong>. Please enter it below.</p>
+        
+        <form id="verify-form" novalidate>
+            <div class="form-group">
+                <input type="text" id="otp-input" name="otp" placeholder="Enter 6-digit OTP" required maxlength="6" pattern="\d{6}">
+                <button type="submit" id="submit-btn">Verify</button>
+            </div>
+        </form>
+        
+        <div id="message-area"></div>
+        <a href="login.html" style="display: block; margin-top: 1rem; font-size: 0.9rem;">Back to Login</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const verifyForm = document.getElementById('verify-form');
+            const otpInput = document.getElementById('otp-input');
+            const messageArea = document.getElementById('message-area');
+            const emailDisplay = document.getElementById('user-email');
+            const submitBtn = document.getElementById('submit-btn');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+
+            if (email) {
+                emailDisplay.textContent = email;
+            } else {
+                window.location.href = 'login.html';
+            }
+
+            verifyForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const otp = otpInput.value.trim();
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Verifying...';
+                
+                if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
+                    showMessage('Please enter a valid 6-digit OTP.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Verify';
+                    return;
+                }
+
+                try {
+                    const formData = new URLSearchParams();
+                    formData.append('email', email);
+                    formData.append('otp', otp);
+
+                    const response = await fetch('verify_otp.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        showMessage(data.message, 'success');
+                        verifyForm.style.display = 'none'; // Hide form on success
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showMessage('An error occurred. Please try again.', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Verify';
+                }
+            });
+
+            function showMessage(message, type) {
+                messageArea.textContent = message;
+                messageArea.className = type === 'success' ? 'message-success' : 'message-error';
+            }
+        });
+    </script>
+</body>
+</html>

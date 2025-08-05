@@ -1,0 +1,131 @@
+/* patient/styles.css */
+:root {
+    --primary-color: #007BFF; /* A friendly, trustworthy blue */
+    --primary-hover: #0056b3;
+    --bg-color: #f8f9fa;
+    --card-bg: #ffffff;
+    --text-primary: #343a40;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.container {
+    width: 100%;
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+}
+
+/* Header & Navigation */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.header .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+.header .logo img { width: 40px; }
+.header .logo h1 { font-size: 1.75rem; margin: 0; font-weight: 600; }
+.header nav a {
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+.header nav a:hover { background-color: #e9ecef; }
+
+/* Cards */
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+/* Login Form */
+.login-container {
+    max-width: 450px;
+    margin: 4rem auto;
+    text-align: center;
+}
+.login-container h2 { font-size: 2rem; margin-bottom: 2rem; }
+.form-group { margin-bottom: 1.5rem; text-align: left; }
+.form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+.btn:hover { background-color: var(--primary-hover); }
+.alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+.alert-danger { background-color: #f8d7da; color: #721c24; }
+
+/* History Table */
+.history-table { width: 100%; border-collapse: collapse; }
+.history-table th, .history-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.history-table th { font-weight: 600; background-color: #f8f9fa; }
+.history-table tbody tr:hover { background-color: #f1f3f5; }
+.history-table .action-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Product View */
+.product-header { margin-bottom: 2rem; }
+.product-header h2 { font-size: 2rem; margin: 0; }
+.product-header .sub-heading { font-size: 1.1rem; color: var(--text-secondary); }
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.detail-item { padding: 1rem; background: #f8f9fa; border-radius: 8px; }
+.detail-item .label { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
+.detail-item .value { font-size: 1.1rem; font-weight: 500; }
+.unique-id { font-family: 'Roboto Mono', monospace; font-size: 0.9em; background: #e9ecef; padding: 3px 6px; border-radius: 4px; }

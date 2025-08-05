@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Medveda Box</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background-color: #e5e7eb; /* Light gray background */
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+        
+        /* Prevent text selection while dragging */
+        body.dragging, body.dragging * {
+            cursor: grabbing !important;
+            user-select: none;
+            -webkit-user-select: none; /* For Safari */
+        }
+
+        /* Container for the main scene */
+        .scene-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* 3D Box Styles */
+        .box-scene {
+            width: 300px;
+            height: 300px;
+            perspective: 1200px;
+            margin-bottom: 3rem;
+            -webkit-box-reflect: below 5px linear-gradient(transparent, transparent, #0004);
+            cursor: grab; /* Indicate interactivity */
+        }
+
+        .box-cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(-30deg);
+            transition: transform 0.1s linear; /* Smooth out rotation slightly */
+        }
+
+        .box-face {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background-color: #fff; /* White faces by default */
+            border: 1px solid #d1d5db;
+            overflow: hidden;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        
+        /* Specific face transformations */
+        .box-front  { transform: rotateY(  0deg) translateZ(150px); padding: 0; }
+        .box-right  { transform: rotateY( 90deg) translateZ(150px); padding: 0; }
+        .box-top    { transform: rotateX( 90deg) translateZ(150px); padding: 0; }
+        .box-back   { transform: rotateY(180deg) translateZ(150px); }
+        .box-left   { transform: rotateY(-90deg) translateZ(150px); }
+        .box-bottom { transform: rotateX(-90deg) translateZ(150px); }
+
+        /* --- BOX DESIGN ELEMENTS (RIGHT & LEFT FACES) --- */
+        .orange-header {
+            background-color: #FF5733; /* Vibrant orange/red */
+            color: white;
+            height: 140px;
+            width: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .orange-header::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 450px;
+            height: 100px;
+            background: #fff;
+            border-radius: 50%;
+        }
+        .medicine-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .volume-info {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            z-index: 2;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .leaf-icon {
+            width: 16px;
+            height: 16px;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));
+        }
+        .bottom-content {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #4b5563;
+            padding: 0 1rem;
+        }
+        .lorem-ipsum {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .dummy-text {
+            font-size: 0.75rem;
+        }
+
+        /* --- MEDICINE INFO PANEL (LEFT FACE) --- */
+        .info-panel {
+            font-size: 11px;
+            color: #374151;
+            line-height: 1.4;
+        }
+        .info-panel h3 {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 2px;
+        }
+        .info-panel p {
+            margin-bottom: 8px;
+        }
+        .info-panel ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .info-panel li {
+            display: flex;
+            justify-content: space-between;
+        }
+        .info-panel .mfg-details {
+            font-size: 9px;
+            color: #6b7280;
+            text-align: center;
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            padding: 0 1rem;
+        }
+        
+        /* --- FOLDED STICKER STYLES --- */
+        .sticker-part {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border: 1px solid rgba(0,0,0,0.1);
+            overflow: hidden;
+            z-index: 10;
+        }
+        .sticker-front-part {
+            top: 0;
+            height: 185px;
+            border-radius: 0 0 10px 10px;
+        }
+        .sticker-top-part {
+            bottom: 0;
+            height: 105px;
+            border-radius: 10px 10px 0 0;
+        }
+        .hologram-full-bg, .hologram-pattern, .hologram-shine {
+            position: absolute;
+            inset: 0;
+        }
+        .hologram-full-bg {
+            overflow: hidden;
+            background: #2d3748;
+        }
+        .hologram-pattern {
+            inset: -50%;
+            background: linear-gradient(110deg, #00ffff, #ff00ff, #ffff00, #00ffff);
+            background-size: 300% 100%;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50"><text x="5" y="15" font-family="Arial" font-size="10" font-weight="bold" fill="white" transform="rotate(-25 10,20)">GENUINE</text><text x="60" y="40" font-family="Arial" font-size="10" font-weight="bold" fill="white" transform="rotate(-25 70,40)">ORIGINAL</text></svg>');
+            animation: shine-text 10s ease-in-out infinite;
+        }
+        .hologram-shine {
+            background: linear-gradient(110deg, transparent 25%, rgba(0, 255, 180, 0.25) 45%, rgba(220, 150, 255, 0.35) 55%, rgba(255, 255, 150, 0.25) 65%, transparent 75%);
+            background-size: 250% 100%;
+            mix-blend-mode: screen;
+            animation: holo-shine 10s ease-in-out infinite;
+        }
+        .sticker-content {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .brand-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: transparent;
+            background: linear-gradient(110deg, #80ffea, #d47fff, #f0ff8a, #80ffea);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            animation: shine-text 10s ease-in-out infinite;
+        }
+        .holo-serial-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            letter-spacing: 1px;
+            color: #ccfaff;
+        }
+        .qr-section {
+            width: 150px;
+            height: 185px;
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+        }
+        #qr-code-container {
+            width: 134px;
+            height: 134px;
+        }
+        #scratch-canvas {
+            position: absolute;
+            width: 134px;
+            height: 67px;
+            top: 75px;
+            left: 8px;
+            cursor: crosshair;
+        }
+        .scratch-prompt {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+        @keyframes holo-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes shine-text { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="scene-container" id="scene-container">
+        <!-- Box with Sticker -->
+        <div class="box-scene" id="box-scene">
+            <div class="box-cube" id="box-cube">
+                <!-- Front Face -->
+                <div class="box-face box-front">
+                    <div class="sticker-part sticker-front-part">
+                        <div class="hologram-full-bg"><div class="hologram-pattern"></div><div class="hologram-shine"></div></div>
+                        <div class="sticker-content">
+                            <div class="qr-section">
+                                <div id="qr-code-container"></div>
+                                <div id="scratch-prompt" class="scratch-prompt"></div>
+                                <canvas id="scratch-canvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Top Face -->
+                <div class="box-face box-top">
+                    <div class="sticker-part sticker-top-part">
+                        <div class="hologram-full-bg"><div class="hologram-pattern"></div><div class="hologram-shine"></div></div>
+                        <div class="sticker-content">
+                            <div class="brand-logo">MEDVEDA</div>
+                            <div id="holo-serial-display" class="holo-serial-number"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right Face (Branding) -->
+                <div class="box-face box-right">
+                    <div class="orange-header">
+                        <div class="volume-info">
+                            <svg class="leaf-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 01.75.75v.255a.25.25 0 00.25.25h.255a.75.75 0 010 1.5h-.255a.25.25 0 00-.25.25v.255a.75.75 0 01-1.5 0v-.255a.25.25 0 00-.25-.25H8.5a.75.75 0 010-1.5h.255a.25.25 0 00.25-.25V2.75A.75.75 0 0110 2zM8.25 6a.75.75 0 01.75.75v.255a.25.25 0 00.25.25h.255a.75.75 0 010 1.5h-.255a.25.25 0 00-.25.25v.255a.75.75 0 01-1.5 0v-.255a.25.25 0 00-.25-.25H6.5a.75.75 0 010-1.5h.255a.25.25 0 00.25-.25V6.75A.75.75 0 018.25 6zM11.75 6a.75.75 0 01.75.75v.255a.25.25 0 00.25.25h.255a.75.75 0 010 1.5h-.255a.25.25 0 00-.25.25v.255a.75.75 0 01-1.5 0v-.255a.25.25 0 00-.25-.25H10.5a.75.75 0 010-1.5h.255a.25.25 0 00.25-.25V6.75a.75.75 0 01.75-.75zM10 10a.75.75 0 01.75.75v.255a.25.25 0 00.25.25h.255a.75.75 0 010 1.5h-.255a.25.25 0 00-.25.25v.255a.75.75 0 01-1.5 0v-.255a.25.25 0 00-.25-.25H8.5a.75.75 0 010-1.5h.255a.25.25 0 00.25-.25v-.255A.75.75 0 0110 10zM8.25 14a.75.75 0 01.75.75v.255a.25.25 0 00.25.25h.255a.75.75 0 010 1.5h-.255a.25.25 0 00-.25.25v.255a.75.75 0 01-1.5 0v-.255a.25.25 0 00-.25-.25H6.5a.75.75 0 010-1.5h.255a.25.25 0 00.25-.25v-.255A.75.75 0 018.25 14zM11.75 14a.75.75 0 01.75.75v.255a.25.25 0 00.25.25h.255a.75.75 0 010 1.5h-.255a.25.25 0 00-.25.25v.255a.75.75 0 01-1.5 0v-.255a.25.25 0 00-.25-.25H10.5a.75.75 0 010-1.5h.255a.25.25 0 00.25-.25v-.255a.75.75 0 01.75-.75z" /></svg>
+                            <span>200 ML</span>
+                        </div>
+                        <div class="medicine-name">MEDVEDA</div>
+                    </div>
+                    <div class="bottom-content">
+                        <div class="lorem-ipsum">LOREM IPSUM</div>
+                        <div class="dummy-text">IS SIMPLY DUMMY TEXT OF THE PRINTING</div>
+                    </div>
+                </div>
+                <!-- Left Face (Info) -->
+                <div class="box-face box-left">
+                    <div class="info-panel">
+                        <h3>Composition:</h3>
+                        <p>Each 5ml of syrup contains Paracetamol IP 125mg, Phenylephrine Hydrochloride IP 5mg, Chlorpheniramine Maleate IP 2mg.</p>
+                        <h3>Dosage:</h3>
+                        <p>As directed by the physician. Do not exceed the recommended dose.</p>
+                        <h3>Storage:</h3>
+                        <p>Store in a cool, dry place, away from direct sunlight. Keep out of reach of children.</p>
+                        <ul>
+                            <li><span>Batch No:</span> <strong>A24-781</strong></li>
+                            <li><span>Mfg. Date:</span> <strong>JUL 2025</strong></li>
+                            <li><span>Exp. Date:</span> <strong>JUN 2027</strong></li>
+                        </ul>
+                        <div class="mfg-details">
+                            <strong>Manufactured by:</strong><br/>
+                            Medveda Pharmaceuticals Pvt. Ltd.<br/>
+                            123 Pharma Lane, Health City, 560099
+                        </div>
+                    </div>
+                </div>
+                <div class="box-face box-back"></div>
+                <div class="box-face box-bottom"></div>
+            </div>
+        </div>
+        
+        <!-- The Sticker Generator Form has been removed -->
+
+    </div>
+
+    <script>
+        // --- Element References ---
+        const holoSerialDisplay = document.getElementById('holo-serial-display');
+        const scratchPrompt = document.getElementById('scratch-prompt');
+        const qrCodeContainer = document.getElementById('qr-code-container');
+        const scratchCanvas = document.getElementById('scratch-canvas');
+        const scratchCtx = scratchCanvas.getContext('2d');
+        const boxScene = document.getElementById('box-scene');
+        const boxCube = document.getElementById('box-cube');
+        const sceneContainer = document.getElementById('scene-container');
+
+        let isScratching = false;
+
+        // --- Sticker Generation and Scratch Logic ---
+        function setupScratchCanvas() {
+            const w = scratchCanvas.width = 134;
+            const h = scratchCanvas.height = 67;
+            scratchCtx.fillStyle = '#bdbdbd';
+            scratchCtx.fillRect(0, 0, w, h);
+            const textureGradient = scratchCtx.createLinearGradient(0, 0, 0, h);
+            textureGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+            textureGradient.addColorStop(1, 'rgba(0,0,0,0.1)');
+            scratchCtx.fillStyle = textureGradient;
+            scratchCtx.fillRect(0, 0, w, h);
+            scratchCtx.globalCompositeOperation = 'destination-out';
+        }
+
+        function getScratchPosition(e) {
+            const rect = scratchCanvas.getBoundingClientRect();
+            const scaleX = scratchCanvas.width / rect.width;
+            const scaleY = scratchCanvas.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY,
+            };
+        }
+
+        function scratch(e) {
+            if (!isScratching) return;
+            e.preventDefault();
+            const pos = getScratchPosition(e);
+            scratchCtx.beginPath();
+            scratchCtx.arc(pos.x, pos.y, 15, 0, Math.PI * 2, true);
+            scratchCtx.fill();
+        }
+
+        function generateSticker(uniqueId, serialNo) {
+            if (!uniqueId || !serialNo) {
+                // If data is missing, hide the box and show an error message.
+                boxScene.style.display = 'none';
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'text-center p-6 bg-white rounded-xl shadow-lg';
+                errorMsg.innerHTML = `
+                    <h2 class="text-2xl font-bold text-red-600">Sticker Data Not Found</h2>
+                    <p class="mt-2 text-gray-600">Please generate a product from the registration page first to see its hologram sticker.</p>
+                    <p class="mt-1 text-sm text-gray-500">This page expects a 'uid' and 'serial' in the URL.</p>
+                `;
+                sceneContainer.appendChild(errorMsg);
+                return;
+            }
+
+            holoSerialDisplay.innerText = `S/N: ${serialNo}`;
+            scratchPrompt.innerText = 'Scratch to Scan';
+
+            qrCodeContainer.innerHTML = '';
+            new QRCode(qrCodeContainer, {
+                text: uniqueId,
+                width: 134,
+                height: 134,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            setupScratchCanvas();
+        }
+
+        // --- 3D Box Rotation Logic ---
+        let isDragging = false;
+        let isRotationLocked = false;
+        let previousX, previousY;
+        let rotationX = -20;
+        let rotationY = -30;
+
+        const onMouseDown = (e) => {
+            if (isRotationLocked) return;
+            isDragging = true;
+            document.body.classList.add('dragging');
+            previousX = e.clientX;
+            previousY = e.clientY;
+        };
+
+        const onMouseMove = (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - previousX;
+            const deltaY = e.clientY - previousY;
+            rotationY += deltaX * 0.5;
+            rotationX -= deltaY * 0.5;
+            boxCube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+            previousX = e.clientX;
+            previousY = e.clientY;
+        };
+
+        const onMouseUp = () => {
+            isDragging = false;
+            document.body.classList.remove('dragging');
+        };
+        
+        const onTouchStart = (e) => {
+            if (isRotationLocked) return;
+            isDragging = true;
+            const touch = e.touches[0];
+            previousX = touch.clientX;
+            previousY = touch.clientY;
+        };
+        
+        const onTouchMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - previousX;
+            const deltaY = touch.clientY - previousY;
+            rotationY += deltaX * 0.5;
+            rotationX -= deltaY * 0.5;
+            boxCube.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+            previousX = touch.clientX;
+            previousY = touch.clientY;
+        };
+
+        const onDoubleClick = () => {
+            isRotationLocked = !isRotationLocked;
+            boxScene.style.cursor = isRotationLocked ? 'default' : 'grab';
+        };
+
+        // --- Attach Event Listeners ---
+        scratchCanvas.addEventListener('mousedown', (e) => { isScratching = true; scratch(e); e.stopPropagation(); });
+        scratchCanvas.addEventListener('mousemove', (e) => { scratch(e); e.stopPropagation(); });
+        scratchCanvas.addEventListener('touchstart', (e) => { isScratching = true; scratch(e); e.stopPropagation(); }, { passive: false });
+        scratchCanvas.addEventListener('touchmove', (e) => { scratch(e); e.stopPropagation(); });
+        
+        document.addEventListener('mouseup', () => { isScratching = false; onMouseUp(); });
+        document.addEventListener('touchend', () => { isScratching = false; onMouseUp(); });
+
+        boxScene.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mousemove', onMouseMove); // Listen on document for smoother dragging
+        boxScene.addEventListener('touchstart', onTouchStart, { passive: true });
+        document.addEventListener('touchmove', onTouchMove, { passive: false }); // Listen on document
+        boxScene.addEventListener('dblclick', onDoubleClick);
+
+        // --- Auto-generation on page load ---
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const uid = urlParams.get('uid');
+            const serial = urlParams.get('serial');
+
+            // Call generateSticker with the values from the URL
+            generateSticker(uid, serial);
+        };
+
+    </script>
+</body>
+</html>

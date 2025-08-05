@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Doctor - MedVeda</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Lenis script removed -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* --- macOS Window Theme --- */
+        :root {
+            --primary-color: #6c63ff; /* Patient Purple */
+            --primary-hover: #5a52e0;
+            --primary-glow: rgba(108, 99, 255, 0.3);
+            --bg-color: #e9e9e9; /* Light gray background */
+            --window-bg: #FFFFFF;
+            --sidebar-bg: rgba(242, 242, 247, 0.95);
+            --text-primary: #1D1D1F;
+            --text-secondary: #6E6E73;
+            --border-color: rgba(60, 60, 67, 0.29);
+        }
+
+        /* --- Base & Layout --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* --- macOS Window Container --- */
+        .macos-browser-window {
+            max-width: 1600px;
+            height: 90vh;
+            margin: 3rem auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background-color: var(--window-bg);
+            display: flex;
+            flex-direction: column;
+            border: 2px solid var(--border-color);
+        }
+
+        /* --- macOS Title Bar --- */
+        .macos-title-bar {
+            background-color: #f6f6f6;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .macos-buttons { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        /* --- Main Dashboard Layout --- */
+        .dashboard-body {
+            display: flex;
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 2px solid var(--border-color);
+            flex-shrink: 0;
+            z-index: 1000;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 0;
+        }
+        .sidebar .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            margin-bottom: 3rem;
+            padding: 0 1.5rem;
+        }
+        .sidebar .logo img { height: 36px; margin-right: 12px; }
+        .sidebar .logo h1 { font-size: 1.5rem; font-weight: 800; }
+        .sidebar-nav { flex-grow: 1; }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem 1.5rem;
+            margin: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .sidebar-nav a.active, .sidebar-nav a:hover {
+            background-color: #f3f2ff;
+            color: var(--primary-color);
+        }
+        .sidebar-nav a i { margin-right: 1rem; width: 20px; text-align: center; }
+        .sidebar .logout-link { margin-top: auto; }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem 3rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-shrink: 0;
+        }
+        .main-header h2 { font-size: 1.8rem; font-weight: 800; margin: 0; }
+        .profile-info { display: flex; align-items: center; gap: 1rem; }
+        .profile-info img { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--primary-color); }
+        .profile-info .username { font-weight: 700; }
+
+        /* Chatbot Specific Styles */
+        .chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--window-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            scroll-behavior: smooth; /* Added for native smooth scrolling */
+        }
+        
+        .chat-bubble-wrapper {
+            display: flex;
+            margin-bottom: 1.5rem;
+            max-width: 85%;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpIn 0.5s forwards;
+        }
+        @keyframes slideUpIn { to { opacity: 1; transform: translateY(0); } }
+
+        .chat-bubble-wrapper.user-message {
+            margin-left: auto;
+            justify-content: flex-end;
+        }
+        .chat-bubble-wrapper.bot-message {
+            margin-right: auto;
+            justify-content: flex-start;
+        }
+        
+        .chat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .user-message .chat-icon {
+            background-color: #94a3b8; /* gray-400 */
+            margin-left: 12px;
+        }
+        .bot-message .chat-icon {
+            background-color: var(--primary-color);
+            margin-right: 12px;
+        }
+        
+        .chat-bubble {
+            padding: 0.8rem 1.2rem;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .bot-message .chat-bubble {
+            background-color: #f1f5f9; /* gray-100 */
+            color: var(--text-dark);
+            border-top-left-radius: 4px;
+        }
+
+        .user-message .chat-bubble {
+            background-color: var(--primary-color);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 1rem 1.5rem;
+            border-top: 2px solid var(--border-color);
+            background-color: #f8fafc; /* gray-50 */
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: var(--window-bg);
+            border-radius: 8px;
+            padding: 0.25rem 0.5rem;
+            border: 2px solid var(--border-color);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .chat-input-wrapper:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        
+        #userInput {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        #sendButton {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #sendButton:hover { background-color: var(--primary-hover); }
+        #sendButton:disabled { background-color: #a5b4fc; cursor: not-allowed; }
+
+        .disclaimer {
+            font-size: 0.75rem;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            font-weight: 600;
+        }
+        
+        /* Markdown formatting styles */
+        .markdown-content ul, .markdown-content ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .markdown-content p { margin-top: 0; margin-bottom: 0.5rem; }
+        .markdown-content strong { font-weight: 800; }
+        .markdown-content code { background-color: #e2e8f0; padding: 2px 4px; border-radius: 4px; font-family: 'Roboto Mono', monospace; }
+    </style>
+</head>
+<body>
+    <div class="macos-browser-window">
+        <div class="macos-title-bar">
+            <div class="macos-buttons">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+        </div>
+        <div class="dashboard-body">
+            <aside class="sidebar">
+                <a href="index.php" class="logo">
+                    <img src="../assets/medchain_logo.svg" alt="MedChain Logo">
+                    <h1>MedVeda</h1>
+                </a>
+                <nav class="sidebar-nav">
+                    <a href="index.php"><i class="fas fa-file-medical"></i>Medical Records</a>
+                    <a href="inventory.php"><i class="fas fa-boxes-stacked"></i>Check Stock</a>
+                    <a href="doctor.html" class="active"><i class="fas fa-user-doctor"></i>AI Doctor</a>
+                
+                <a href="?logout=true" class="sidebar-nav logout-link"><i class="fas fa-sign-out-alt"></i>Logout</a>
+             </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="main-header">
+                    <h2>AI Doctor Assistant</h2>
+                    <div class="profile-info">
+                        <!-- PHP code here is a placeholder for dynamic integration -->
+                        <span class="username">Welcome, Patient</span>
+                        <img src="https://i.pravatar.cc/150?u=patient123" alt="User Profile Photo">
+                    </div>
+                </header>
+
+                <div class="chat-container">
+                    <div id="chat-window">
+                        <!-- Initial Bot Message -->
+                        <div class="chat-bubble-wrapper bot-message">
+                            <div class="chat-icon"><i class="fas fa-stethoscope"></i></div>
+                            <div class="chat-bubble">
+                                <p><strong>Hello!</strong></p>
+                                <p>I'm your AI Doctor Assistant. You can ask me health-related questions. Please remember, I am an AI and not a substitute for a real doctor. For any serious concerns, please consult a healthcare professional.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <input type="text" id="userInput" placeholder="Type your medical question here..." autocomplete="off">
+                            <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                        <p class="disclaimer">
+                            <strong>Disclaimer:</strong> This is an AI assistant. Information provided is not medical advice. Always consult a qualified doctor.
+                        </p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // --- Lenis script and initialization removed ---
+
+        // --- All other JavaScript functions ---
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        const apiKey = "AIzaSyD-lGaGaMRjvzt70ux1BcM01GEEIBj5Jd8"; // IMPORTANT: Leave this empty. It will be handled by the environment.
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        
+        let chatHistory = [];
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const messageText = userInput.value.trim();
+            if (messageText === '') return;
+
+            addMessageToUI(messageText, 'user');
+            chatHistory.push({ role: "user", parts: [{ text: messageText }] });
+            
+            userInput.value = '';
+            sendButton.disabled = true;
+
+            addTypingIndicator();
+
+            try {
+                const systemInstruction = {
+                    parts: [{ text: "You are an empathetic and helpful AI medical assistant. Your name is 'MedBot'. You must always prioritize safety and strongly advise users to consult a real healthcare professional for any diagnosis or treatment. Do not provide diagnoses. You can provide general information about conditions, symptoms, and wellness topics. Format your responses using markdown for better readability (e.g., use lists, bold text)." }]
+                };
+                
+                const payload = {
+                    contents: chatHistory,
+                    systemInstruction: systemInstruction,
+                    generationConfig: {
+                        temperature: 0.5,
+                        topK: 1,
+                        topP: 1,
+                        maxOutputTokens: 2048,
+                    },
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    console.error("API Error Body:", errorBody);
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                removeTypingIndicator();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const botResponse = result.candidates[0].content.parts[0].text;
+                    addMessageToUI(botResponse, 'bot');
+                    chatHistory.push({ role: "model", parts: [{ text: botResponse }] });
+                } else {
+                    const reason = result.promptFeedback?.blockReason || "No content returned";
+                    throw new Error(`No response from AI. Reason: ${reason}.`);
+                }
+
+            } catch (error) {
+                console.error("Error fetching AI response:", error);
+                removeTypingIndicator();
+                addMessageToUI(`Sorry, I encountered an error. Please check the API key and your connection, then try again. \n\n*Details: ${error.message}*`, 'bot', true);
+            } finally {
+                sendButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        function addMessageToUI(text, sender, isError = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `chat-bubble-wrapper ${sender}-message`;
+
+            const icon = document.createElement('div');
+            icon.className = 'chat-icon';
+            icon.innerHTML = sender === 'bot' ? '<i class="fas fa-stethoscope"></i>' : '<i class="fas fa-user"></i>';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+            
+            if (isError) {
+                 bubble.style.backgroundColor = '#fee2e2';
+                 bubble.style.color = '#991b1b';
+            }
+
+            if (sender === 'bot') {
+                bubble.innerHTML = `<div class="markdown-content">${marked.parse(text)}</div>`;
+                wrapper.appendChild(icon);
+                wrapper.appendChild(bubble);
+            } else {
+                bubble.textContent = text;
+                wrapper.appendChild(bubble);
+                wrapper.appendChild(icon);
+            }
+
+            chatWindow.appendChild(wrapper);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'typing-indicator';
+            indicator.className = 'chat-bubble-wrapper bot-message';
+            indicator.innerHTML = `
+                <div class="chat-icon"><i class="fas fa-stethoscope"></i></div>
+                <div class="chat-bubble">
+                    <div style="display:flex; gap: 4px; align-items: center;">
+                        <span style="height: 8px; width: 8px; background-color: var(--text-light); border-radius: 50%; animation: bounce 1s infinite;"></span>
+                        <span style="height: 8px; width: 8px; background-color: var(--text-light); border-radius: 50%; animation: bounce 1s infinite .2s;"></span>
+                        <span style="height: 8px; width: 8px; background-color: var(--text-light); border-radius: 50%; animation: bounce 1s infinite .4s;"></span>
+                    </div>
+                </div>
+            `;
+            chatWindow.appendChild(indicator);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes bounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-4px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holographic Split QR Code Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hologram-overlay {
+            background: linear-gradient(45deg, 
+                rgba(255, 0, 0, 0.3), 
+                rgba(255, 153, 0, 0.3), 
+                rgba(255, 255, 0, 0.3), 
+                rgba(0, 255, 0, 0.3), 
+                rgba(0, 0, 255, 0.3), 
+                rgba(75, 0, 130, 0.3), 
+                rgba(238, 130, 238, 0.3)
+            );
+            background-size: 400% 400%;
+            animation: holographic-shine 5s ease infinite;
+        }
+        @keyframes holographic-shine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-cyan-400">Holographic QR Code Generator</h1>
+            <p class="text-gray-400 mt-2">Create a shiny, split QR code for secure stickers.</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+                <label for="uniqueId" class="block text-sm font-medium text-gray-300 mb-2">Unique ID</label>
+                <input type="text" id="uniqueId" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="e.g., PROD12345">
+            </div>
+            <div>
+                <label for="serialNo" class="block text-sm font-medium text-gray-300 mb-2">Serial Number</label>
+                <input type="text" id="serialNo" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="e.g., SN987654321">
+            </div>
+        </div>
+        <div class="text-center mb-8">
+            <button id="generateBtn" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                Generate & Split QR Code
+            </button>
+        </div>
+
+        <!-- Output Section -->
+        <div id="output" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <!-- Full QR Code Preview -->
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-300">Full Hologram Preview</h2>
+                    <div id="qrcode-container" class="relative w-64 h-64 mx-auto bg-white p-4 rounded-lg shadow-inner">
+                        <div id="qrcode" class="w-full h-full"></div>
+                        <div class="absolute inset-0 p-4 hologram-overlay rounded-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Split QR Code Parts -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 text-center text-gray-300">Split Sticker Parts (Downloadable)</h2>
+                    <div class="grid grid-cols-2 gap-2 max-w-sm mx-auto">
+                        <div id="part1-container" class="p-2 bg-gray-700 rounded-lg"></div>
+                        <div id="part2-container" class="p-2 bg-gray-700 rounded-lg"></div>
+                        <div id="part3-container" class="p-2 bg-gray-700 rounded-lg"></div>
+                        <div id="part4-container" class="p-2 bg-gray-700 rounded-lg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden canvas for drawing -->
+        <canvas id="hidden-canvas" class="hidden"></canvas>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generateBtn');
+        const outputDiv = document.getElementById('output');
+        const uniqueIdInput = document.getElementById('uniqueId');
+        const serialNoInput = document.getElementById('serialNo');
+        const qrcodeContainer = document.getElementById('qrcode');
+        const hiddenCanvas = document.getElementById('hidden-canvas');
+        const ctx = hiddenCanvas.getContext('2d');
+
+        generateBtn.addEventListener('click', () => {
+            const uniqueId = uniqueIdInput.value.trim();
+            const serialNo = serialNoInput.value.trim();
+
+            if (!uniqueId || !serialNo) {
+                alert('Please enter both a Unique ID and a Serial Number.');
+                return;
+            }
+
+            const data = `UniqueID: ${uniqueId}\nSerialNo: ${serialNo}`;
+            
+            // Clear previous QR code
+            qrcodeContainer.innerHTML = '';
+            
+            // 1. Generate QR Code using library
+            const qr = new QRCode(qrcodeContainer, {
+                text: data,
+                width: 256,
+                height: 256,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            outputDiv.classList.remove('hidden');
+
+            // Delay to ensure QR code image is drawn by the library
+            setTimeout(() => {
+                // 2. Draw QR code onto our hidden canvas
+                const qrImg = qrcodeContainer.querySelector('img');
+                if (!qrImg) return;
+                
+                const size = 256;
+                hiddenCanvas.width = size;
+                hiddenCanvas.height = size;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, size, size);
+                ctx.drawImage(qrImg, 0, 0, size, size);
+
+                // 3. Draw hologram overlay onto the canvas
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, 'rgba(255, 0, 255, 0.3)');
+                gradient.addColorStop(0.25, 'rgba(0, 255, 255, 0.3)');
+                gradient.addColorStop(0.5, 'rgba(255, 255, 0, 0.3)');
+                gradient.addColorStop(0.75, 'rgba(0, 255, 0, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 0, 0, 0.3)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // 4. Split the canvas into 4 parts
+                splitCanvas(size);
+
+            }, 200); // 200ms delay
+        });
+
+        function splitCanvas(size) {
+            const partSize = size / 2;
+            const parts = [
+                { x: 0, y: 0 },         // Top-left
+                { x: partSize, y: 0 },  // Top-right
+                { x: 0, y: partSize },  // Bottom-left
+                { x: partSize, y: partSize } // Bottom-right
+            ];
+
+            for (let i = 0; i < 4; i++) {
+                const partContainer = document.getElementById(`part${i + 1}-container`);
+                partContainer.innerHTML = ''; // Clear previous part
+                
+                const partCanvas = document.createElement('canvas');
+                partCanvas.width = partSize;
+                partCanvas.height = partSize;
+                const partCtx = partCanvas.getContext('2d');
+
+                partCtx.drawImage(
+                    hiddenCanvas,
+                    parts[i].x, parts[i].y, // Source x, y
+                    partSize, partSize,      // Source width, height
+                    0, 0,                    // Destination x, y
+                    partSize, partSize       // Destination width, height
+                );
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = partCanvas.toDataURL('image/png');
+                downloadLink.download = `qr_part_${i + 1}.png`;
+                downloadLink.appendChild(partCanvas);
+                partContainer.appendChild(downloadLink);
+            }
+        }
+    </script>
+</body>
+</html>

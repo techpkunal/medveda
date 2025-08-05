@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedChain - Register Patient Account</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-container {
+            padding: 40px 30px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .step.active {
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+
+        .role-selector {
+            margin-bottom: 30px;
+        }
+
+        .role-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .role-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .role-btn {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .role-btn:hover {
+            border-color: #2c5aa0;
+            background: #f8f9ff;
+        }
+
+        .role-btn.active {
+            border-color: #2c5aa0;
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2c5aa0;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .step-section {
+            display: none;
+        }
+
+        .step-section.active {
+            display: block;
+        }
+
+        .otp-input {
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: #2c5aa0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .password-requirements {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin: 2px 0;
+        }
+
+        .requirement.valid {
+            color: #28a745;
+        }
+
+        .requirement.invalid {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 MedChain</h1>
+            <p>Create Your Secure Patient Account</p>
+        </div>
+
+        <div class="form-container">
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step" id="step2">2</div>
+                <div class="step" id="step3">3</div>
+            </div>
+
+            <div id="alert" class="alert"></div>
+
+            <!-- Step 1: Role and Email -->
+            <div id="step1-section" class="step-section active">
+                <div class="role-selector">
+                    <label>You are registering as a:</label>
+                    <div class="role-buttons">
+                        <button type="button" class="role-btn active" data-role="patient">
+                            👤 Patient
+                        </button>
+                    </div>
+                </div>
+
+                <form id="step1Form">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    </div>
+
+                    <button type="submit" class="btn">
+                        Send Verification Code
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 2: OTP Verification -->
+            <div id="step2-section" class="step-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #333;">Verify Your Email</h3>
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    We've sent a 6-digit code to <span id="otpEmail"></span>
+                </p>
+
+                <form id="step2Form">
+                    <div class="form-group">
+                        <input type="text" id="otp" name="otp" class="otp-input" maxlength="6" required placeholder="000000">
+                    </div>
+
+                    <button type="submit" class="btn">
+                        Verify Code
+                    </button>
+                </form>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" id="resendOtp" style="background: none; border: none; color: #2c5aa0; cursor: pointer; text-decoration: underline;">
+                        Resend Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Complete Registration -->
+            <div id="step3-section" class="step-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #333;">Complete Your Profile</h3>
+
+                <form id="step3Form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required placeholder="Choose username">
+                        </div>
+                        <div class="form-group">
+                            <label for="full_name">Full Name</label>
+                            <input type="text" id="full_name" name="full_name" required placeholder="Your full name">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" placeholder="Your phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="organization">Organization (Optional)</label>
+                            <input type="text" id="organization" name="organization" placeholder="e.g., Family, Self">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required placeholder="Create strong password">
+                        <div class="password-requirements">
+                            <div class="requirement" id="req-length">• At least 8 characters</div>
+                            <div class="requirement" id="req-upper">• One uppercase letter</div>
+                            <div class="requirement" id="req-lower">• One lowercase letter</div>
+                            <div class="requirement" id="req-number">• One number</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm your password">
+                    </div>
+
+                    <button type="submit" class="btn">
+                        Complete Registration
+                    </button>
+                </form>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing...</p>
+            </div>
+
+            <div class="login-link">
+                <p>Already have an account? <a href="login_medchain.html">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // The role is now fixed to 'patient'
+        const selectedRole = 'patient';
+        let currentEmail = '';
+        let currentStep = 1;
+
+        // Show alert
+        function showAlert(message, type = 'error') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show loading
+        function showLoading(show = true) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Update step indicator
+        function updateStepIndicator(step) {
+            for (let i = 1; i <= 3; i++) {
+                const stepEl = document.getElementById(`step${i}`);
+                if (i < step) {
+                    stepEl.className = 'step completed';
+                } else if (i === step) {
+                    stepEl.className = 'step active';
+                } else {
+                    stepEl.className = 'step';
+                }
+            }
+        }
+
+        // Show step
+        function showStep(step) {
+            document.querySelectorAll('.step-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`step${step}-section`).classList.add('active');
+            updateStepIndicator(step);
+            currentStep = step;
+        }
+
+        // Step 1: Send OTP
+        document.getElementById('step1Form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showAlert('Please enter your email address.');
+                return;
+            }
+
+            currentEmail = email;
+            showLoading(true);
+
+            try {
+                const response = await fetch('send_otp_medchain.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        role: selectedRole,
+                        action: 'register'
+                    })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.status === 'success') {
+                    document.getElementById('otpEmail').textContent = email;
+                    showStep(2);
+                    showAlert(data.message, 'success');
+                } else {
+                    showAlert(data.message);
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('Network error. Please try again.');
+            }
+        });
+
+        // Step 2: Verify OTP
+        document.getElementById('step2Form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otp').value;
+            if (!otp || otp.length !== 6) {
+                showAlert('Please enter a valid 6-digit code.');
+                return;
+            }
+
+            showStep(3);
+            showAlert('Email verified! Please complete your profile.', 'success');
+        });
+
+        // Step 3: Complete Registration
+        document.getElementById('step3Form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const registrationData = {
+                username: formData.get('username'),
+                full_name: formData.get('full_name'),
+                phone: formData.get('phone'),
+                organization: formData.get('organization'),
+                password: formData.get('password')
+            };
+
+            // Validate password
+            if (!validatePassword(registrationData.password)) {
+                showAlert('Please ensure your password meets all requirements.');
+                return;
+            }
+
+            if (registrationData.password !== formData.get('confirm_password')) {
+                showAlert('Passwords do not match.');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('verify_otp_medchain.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentEmail,
+                        otp: document.getElementById('otp').value,
+                        role: selectedRole,
+                        action: 'register',
+                        registration_data: registrationData
+                    })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.status === 'success') {
+                    showAlert('Registration successful! Redirecting to your dashboard...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 2000);
+                } else {
+                    showAlert(data.message);
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('Network error. Please try again.');
+            }
+        });
+
+        // Resend OTP
+        document.getElementById('resendOtp').addEventListener('click', async function() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('send_otp_medchain.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentEmail,
+                        role: selectedRole,
+                        action: 'register'
+                    })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.status === 'success') {
+                    showAlert('New code sent to your email.', 'success');
+                } else {
+                    showAlert(data.message);
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('Network error. Please try again.');
+            }
+        });
+
+        // Password validation
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /\d/.test(password)
+            };
+
+            document.getElementById('req-length').className = requirements.length ? 'requirement valid' : 'requirement invalid';
+            document.getElementById('req-upper').className = requirements.upper ? 'requirement valid' : 'requirement invalid';
+            document.getElementById('req-lower').className = requirements.lower ? 'requirement valid' : 'requirement invalid';
+            document.getElementById('req-number').className = requirements.number ? 'requirement valid' : 'requirement invalid';
+
+            return Object.values(requirements).every(req => req);
+        }
+
+        // Real-time password validation
+        document.getElementById('password').addEventListener('input', function() {
+            validatePassword(this.value);
+        });
+
+        // Auto-format OTP input
+        document.getElementById('otp').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+</html>

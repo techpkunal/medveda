@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# Database
+*.sql
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+tmp/
+temp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build files
+dist/
+build/
+
+# Backup files
+*.bak
+*.backup
+
+# PHP specific
+composer.phar
+composer.lock
+
+# XAMPP specific files
+.htaccess.bak
+
+# Sensitive files
+config_local.php
+private_keys/
+certificates/

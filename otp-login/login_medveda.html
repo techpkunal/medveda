@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedChain - Secure Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-container {
+            padding: 40px 30px;
+        }
+
+        .role-selector {
+            margin-bottom: 30px;
+        }
+
+        .role-selector label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .role-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .role-btn {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .role-btn:hover {
+            border-color: #2c5aa0;
+            background: #f8f9ff;
+        }
+
+        .role-btn.active {
+            border-color: #2c5aa0;
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .patient-btn {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+            color: #666;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 20px;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .register-link a {
+            color: #2c5aa0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2c5aa0;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .otp-section {
+            display: none;
+        }
+
+        .otp-input {
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        .resend-otp {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .resend-otp button {
+            background: none;
+            border: none;
+            color: #2c5aa0;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 MedChain</h1>
+            <p>Secure Pharmaceutical Supply Chain</p>
+        </div>
+
+        <div class="form-container">
+            <div id="alert" class="alert"></div>
+            
+            <div id="login-section">
+                <div class="role-selector">
+                    <label>Select Your Role:</label>
+                    <div class="role-buttons">
+                        <button type="button" class="role-btn" data-role="distributor">
+                            📦 Distributor
+                        </button>
+                        <button type="button" class="role-btn" data-role="hospital">
+                            🏥 Hospital
+                        </button>
+                        <button type="button" class="role-btn" data-role="pharmacist">
+                            💊 Pharmacist
+                        </button>
+                        <button type="button" class="role-btn" data-role="patient">
+                            👤 Patient
+                        </button>
+                    </div>
+                </div>
+
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    </div>
+
+                    <button type="submit" class="btn" id="loginBtn">
+                        Send Login Code
+                    </button>
+                </form>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <div class="register-link">
+                    <p>Don't have a patient account? <a href="#" id="showRegister">Register here</a></p>
+                </div>
+            </div>
+
+            <div id="otp-section" class="otp-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: #333;">Enter Verification Code</h3>
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    We've sent a 6-digit code to <span id="otpEmail"></span>
+                </p>
+
+                <form id="otpForm">
+                    <div class="form-group">
+                        <input type="text" id="otp" name="otp" class="otp-input" maxlength="6" required placeholder="000000">
+                    </div>
+
+                    <button type="submit" class="btn" id="verifyBtn">
+                        Verify & Login
+                    </button>
+                </form>
+
+                <div class="resend-otp">
+                    <button type="button" id="resendOtp">Resend Code</button>
+                </div>
+
+                <div class="register-link">
+                    <a href="#" id="backToLogin">‹ Back to Login</a>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processing...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedRole = '';
+        let currentEmail = '';
+        let currentAction = 'login';
+
+        // Role selection
+        document.querySelectorAll('.role-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                selectedRole = this.dataset.role;
+            });
+        });
+
+        // Set default role to patient if no role is selected on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const roleMapping = {
+                'distributor': 'distributor',
+                'pharmacist': 'pharmacist',
+                'patient': 'patient',
+                'hospital': 'hospital' // Add hospital role
+            };
+
+            const defaultRole = localStorage.getItem('selectedRole');
+            if (defaultRole && roleMapping[defaultRole]) {
+                const btn = document.querySelector(`.role-btn[data-role="${defaultRole}"]`);
+                if (btn) {
+                    btn.click();
+                }
+            } else {
+                // Default to patient if no role is stored or invalid
+                const patientBtn = document.querySelector('.role-btn[data-role="patient"]');
+                if (patientBtn) {
+                    patientBtn.click();
+                }
+            }
+        });
+
+        // Show alert
+        function showAlert(message, type = 'error') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show loading
+        function showLoading(show = true) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!selectedRole) {
+                showAlert('Please select your role first.');
+                return;
+            }
+
+            const email = document.getElementById('email').value;
+            if (!email) {
+                showAlert('Please enter your email address.');
+                return;
+            }
+
+            currentEmail = email;
+            showLoading(true);
+
+            try {
+                const response = await fetch('send_otp_medchain.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        role: selectedRole,
+                        action: 'login'
+                    })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.status === 'success') {
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('otp-section').style.display = 'block';
+                    document.getElementById('otpEmail').textContent = email;
+                    showAlert(data.message, 'success');
+                } else {
+                    showAlert(data.message);
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('Network error. Please try again.');
+            }
+        });
+
+        // OTP form submission
+        document.getElementById('otpForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otp').value;
+            if (!otp || otp.length !== 6) {
+                showAlert('Please enter a valid 6-digit code.');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('verify_otp_medchain.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentEmail,
+                        otp: otp,
+                        role: selectedRole,
+                        action: 'login'
+                    })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.status === 'success') {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 1500);
+                } else {
+                    showAlert(data.message);
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('Network error. Please try again.');
+            }
+        });
+
+        // Resend OTP
+        document.getElementById('resendOtp').addEventListener('click', async function() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('send_otp_medchain.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentEmail,
+                        role: selectedRole,
+                        action: 'login'
+                    })
+                });
+
+                const data = await response.json();
+                showLoading(false);
+
+                if (data.status === 'success') {
+                    showAlert('New code sent to your email.', 'success');
+                } else {
+                    showAlert(data.message);
+                }
+            } catch (error) {
+                showLoading(false);
+                showAlert('Network error. Please try again.');
+            }
+        });
+
+        // Back to login
+        document.getElementById('backToLogin').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('otp-section').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('otp').value = '';
+        });
+
+        // Show register page
+        document.getElementById('showRegister').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = 'register_medchain.html';
+        });
+
+        // Auto-format OTP input
+        document.getElementById('otp').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+</body>
+</html>

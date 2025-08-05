@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hologram QR Code on 3D Box</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* General body styling */
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background-color: #111827; /* Dark background for contrast */
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* Container for the main scene */
+        .scene-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* 3D Box Styles */
+        .box-scene {
+            width: 300px;
+            height: 300px;
+            perspective: 1200px; /* Provides the 3D space */
+            margin-bottom: 3rem;
+        }
+
+        .box-cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(-30deg);
+            transition: transform 0.5s ease-out;
+        }
+
+        .box-scene:hover .box-cube {
+            transform: rotateX(-15deg) rotateY(-20deg);
+        }
+
+        .box-face {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.9));
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(0, 200, 255, 0.1);
+        }
+
+        .box-front  { transform: rotateY(  0deg) translateZ(150px); }
+        .box-back   { transform: rotateY(180deg) translateZ(150px); }
+        .box-right  { transform: rotateY( 90deg) translateZ(150px); }
+        .box-left   { transform: rotateY(-90deg) translateZ(150px); }
+        .box-top    { transform: rotateX( 90deg) translateZ(150px); }
+        .box-bottom { transform: rotateX(-90deg) translateZ(150px); }
+        
+        /* --- NEW STICKER STYLES --- */
+        /* Base class for both sticker parts */
+        .sticker-part {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border: 1px solid rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Sticker part on the FRONT face */
+        .sticker-front {
+            top: 0;
+            height: 185px; /* Height for the QR section */
+            border-radius: 0 0 10px 10px;
+        }
+
+        /* Sticker part on the TOP face */
+        .sticker-top {
+            bottom: 0; /* Aligns to the "front" edge of the top face */
+            height: 105px; /* Height for the logo/serial section */
+            border-radius: 10px 10px 0 0;
+        }
+
+        /* Hologram styles are applied to both sticker parts */
+        .hologram-full-bg {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            background: #2d3748;
+        }
+        .hologram-pattern {
+            position: absolute;
+            inset: -50%;
+            background: linear-gradient(110deg, #00ffff, #ff00ff, #ffff00, #00ffff);
+            background-size: 300% 100%;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50"><text x="5" y="15" font-family="Arial" font-size="10" font-weight="bold" fill="white" transform="rotate(-25 10,20)">GENUINE</text><text x="60" y="40" font-family="Arial" font-size="10" font-weight="bold" fill="white" transform="rotate(-25 70,40)">ORIGINAL</text><path d="M 130 10 l 2 5 l 5 -2 l -2 5 l 5 2 l-5 2 l 2 5 l -5 -2 l -2 5 l -2 -5 l -5 2 l 2 -5 l -5 -2 l 5 -2 z" fill="rgba(255,255,255,0.3)"/></svg>');
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="50"><text x="5" y="15" font-family="Arial" font-size="10" font-weight="bold" fill="white" transform="rotate(-25 10,20)">GENUINE</text><text x="60" y="40" font-family="Arial" font-size="10" font-weight="bold" fill="white" transform="rotate(-25 70,40)">ORIGINAL</text><path d="M 130 10 l 2 5 l 5 -2 l -2 5 l 5 2 l-5 2 l 2 5 l -5 -2 l -2 5 l -2 -5 l -5 2 l 2 -5 l -5 -2 l 5 -2 z" fill="rgba(255,255,255,0.3)"/></svg>');
+            animation: shine-text 10s ease-in-out infinite;
+        }
+        .hologram-shine {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, transparent 25%, rgba(0, 255, 180, 0.25) 45%, rgba(220, 150, 255, 0.35) 55%, rgba(255, 255, 150, 0.25) 65%, transparent 75%);
+            background-size: 250% 100%;
+            mix-blend-mode: screen;
+            animation: holo-shine 10s ease-in-out infinite;
+        }
+        .sticker-content {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Content alignment for the top part */
+        .sticker-top .sticker-content {
+            justify-content: center;
+            padding: 10px;
+        }
+
+        /* Content alignment for the front part */
+        .sticker-front .sticker-content {
+            justify-content: center;
+            padding: 0; /* Remove padding to let qr-section handle it */
+        }
+
+        .brand-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            background: linear-gradient(110deg, #80ffea, #d47fff, #f0ff8a, #80ffea);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: shine-text 10s ease-in-out infinite;
+            font-size: 28px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+        .holo-serial-number {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 8px;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            color: #ccfaff;
+        }
+        .qr-section {
+            width: 150px;
+            height: 185px;
+            background: white;
+            border-radius: 6px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+        }
+        #qr-code-container {
+            width: 134px;
+            height: 134px;
+        }
+        #scratch-canvas {
+            position: absolute;
+            width: 134px;
+            height: 67px;
+            top: 75px;
+            left: 8px;
+            cursor: crosshair;
+            border-radius: 2px;
+        }
+        .scratch-prompt {
+            width: 100%;
+            text-align: center;
+            font-family: 'Roboto Condensed', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            color: #6b7280;
+            letter-spacing: 1px;
+            margin-top: 6px;
+        }
+        @keyframes holo-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes shine-text { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="scene-container">
+        <!-- Box with Sticker -->
+        <div class="box-scene">
+            <div class="box-cube">
+                <!-- Front Face of the Box -->
+                <div class="box-face box-front">
+                    <!-- Front part of the sticker -->
+                    <div class="sticker-part sticker-front">
+                        <div class="hologram-full-bg">
+                            <div class="hologram-pattern"></div>
+                            <div class="hologram-shine"></div>
+                        </div>
+                        <div class="sticker-content">
+                            <div class="qr-section">
+                                <div id="qr-code-container"></div>
+                                <div id="scratch-prompt" class="scratch-prompt"></div>
+                                <canvas id="scratch-canvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Top Face of the Box -->
+                <div class="box-face box-top">
+                    <!-- Top part of the sticker -->
+                    <div class="sticker-part sticker-top">
+                        <div class="hologram-full-bg">
+                            <div class="hologram-pattern"></div>
+                            <div class="hologram-shine"></div>
+                        </div>
+                        <div class="sticker-content">
+                            <div class="brand-logo">MEDVEDA</div>
+                            <div id="holo-serial-display" class="holo-serial-number"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="box-face box-back"></div>
+                <div class="box-face box-right"></div>
+                <div class="box-face box-left"></div>
+                <div class="box-face box-bottom"></div>
+            </div>
+        </div>
+
+        <!-- Input Controls -->
+        <div class="p-6 bg-gray-800 rounded-2xl shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-bold text-center text-gray-200 mb-4">Sticker Generator</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label for="uniqueId" class="block text-sm font-medium text-gray-400 mb-1">Unique ID (for QR Code)</label>
+                    <input type="text" id="uniqueId" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none" value="MED-PROD-XYZ-12345">
+                </div>
+                <div>
+                    <label for="serialNo" class="block text-sm font-medium text-gray-400 mb-1">Serial Number</label>
+                    <input type="text" id="serialNo" class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none" value="ADV38CD71FC0A7">
+                </div>
+            </div>
+            <div class="text-center mt-6">
+                <button id="generateBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                    Generate Sticker
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // All element references remain the same
+        const generateBtn = document.getElementById('generateBtn');
+        const uniqueIdInput = document.getElementById('uniqueId');
+        const serialNoInput = document.getElementById('serialNo');
+        const holoSerialDisplay = document.getElementById('holo-serial-display');
+        const scratchPrompt = document.getElementById('scratch-prompt');
+        const qrCodeContainer = document.getElementById('qr-code-container');
+        const scratchCanvas = document.getElementById('scratch-canvas');
+        const scratchCtx = scratchCanvas.getContext('2d');
+
+        let isScratching = false;
+
+        function setupScratchCanvas() {
+            const w = scratchCanvas.width = 134;
+            const h = scratchCanvas.height = 67;
+            scratchCtx.fillStyle = '#bdbdbd';
+            scratchCtx.fillRect(0, 0, w, h);
+            const textureGradient = scratchCtx.createLinearGradient(0, 0, 0, h);
+            textureGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+            textureGradient.addColorStop(1, 'rgba(0,0,0,0.1)');
+            scratchCtx.fillStyle = textureGradient;
+            scratchCtx.fillRect(0, 0, w, h);
+            scratchCtx.globalCompositeOperation = 'destination-out';
+        }
+
+        function getScratchPosition(e) {
+            const rect = scratchCanvas.getBoundingClientRect();
+            const scaleX = scratchCanvas.width / rect.width;
+            const scaleY = scratchCanvas.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY,
+            };
+        }
+
+        function scratch(e) {
+            if (!isScratching) return;
+            e.preventDefault();
+            const pos = getScratchPosition(e);
+            scratchCtx.beginPath();
+            scratchCtx.arc(pos.x, pos.y, 15, 0, Math.PI * 2, true);
+            scratchCtx.fill();
+        }
+
+        function generateSticker() {
+            const uniqueId = uniqueIdInput.value.trim();
+            const serialNo = serialNoInput.value.trim();
+
+            if (!uniqueId || !serialNo) {
+                console.error('Please enter both a Unique ID and a Serial Number.');
+                return;
+            }
+
+            holoSerialDisplay.innerText = `S/N: ${serialNo}`;
+            scratchPrompt.innerText = 'Scratch to Scan';
+
+            qrCodeContainer.innerHTML = '';
+            new QRCode(qrCodeContainer, {
+                text: uniqueId,
+                width: 134,
+                height: 134,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            setupScratchCanvas();
+        }
+
+        // --- Event Listeners ---
+        generateBtn.addEventListener('click', generateSticker);
+        
+        scratchCanvas.addEventListener('mousedown', (e) => { isScratching = true; scratch(e); });
+        scratchCanvas.addEventListener('mousemove', scratch);
+        document.addEventListener('mouseup', () => { isScratching = false; });
+        
+        scratchCanvas.addEventListener('touchstart', (e) => { isScratching = true; scratch(e); }, { passive: false });
+        scratchCanvas.addEventListener('touchmove', scratch);
+        document.addEventListener('touchend', () => { isScratching = false; });
+
+        window.onload = generateSticker;
+
+    </script>
+</body>
+</html>

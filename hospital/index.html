@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Terminal - MedVeda</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://unpkg.com/lenis@1.1.5/dist/lenis.min.js"></script>
+    <style>
+        /* --- macOS Window Theme --- */
+        :root {
+            --primary-color: #4CAF50; /* Green for Hospital */
+            --primary-hover: #0277BD;
+            --primary-glow: rgba(2, 136, 209, 0.2);
+            --bg-color: #e9e9e9; /* Light gray background */
+            --window-bg: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #6E6E73;
+            --border-color: rgba(60, 60, 67, 0.29);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --danger-color: #D32F2F;
+            --success-color: #388E3C;
+            --chain-color: #7E57C2; /* Purple for the chain */
+        }
+
+        /* --- Base & Layout --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+        /* --- macOS Window Container --- */
+        .macos-browser-window {
+            max-width: 1200px;
+            margin: 3rem auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background-color: var(--window-bg);
+            display: flex;
+            flex-direction: column;
+            border: 2px solid var(--border-color);
+        }
+
+        /* --- macOS Title Bar --- */
+        .macos-title-bar {
+            background-color: #f6f6f6;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .macos-buttons { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        .main-content {
+            padding: 2.5rem;
+        }
+
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header img { width: 80px; margin-bottom: 1rem; }
+        .header h1 { font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin: 0; }
+        .header p { font-size: 1.1rem; color: var(--text-secondary); font-weight: 600; }
+        
+        #message-area {
+            padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; font-weight: 700;
+            display: none; transition: all 0.3s ease-in-out; text-align: center;
+        }
+        #message-area.success { background-color: var(--success-color); color: white; display: block; }
+        #message-area.error { background-color: var(--danger-color); color: white; display: block; }
+
+        .scanner-card { background-color: var(--window-bg); padding: 2rem; border-radius: 16px; box-shadow: var(--shadow); border: 2px solid var(--border-color); }
+        .form-group { display: flex; gap: 1rem; }
+        .form-group input {
+            flex-grow: 1; padding: 15px; font-size: 1.1rem; border: 2px solid var(--border-color);
+            border-radius: 8px; transition: all 0.2s ease; background-color: #f8f9fa;
+        }
+        .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .form-group input { font-family: 'Roboto Mono', monospace; font-weight: 600; }
+        .btn {
+            padding: 15px 25px; font-size: 1.1rem; border-radius: 8px; font-weight: 700;
+            border: none; cursor: pointer; transition: all 0.2s ease; display: inline-flex;
+            align-items: center; justify-content: center; gap: 8px; background-color: var(--primary-color); color: white;
+        }
+        .btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        #results-container { margin-top: 2rem; opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+        #results-container.visible { opacity: 1; transform: translateY(0); }
+        
+        .verification-card { background: var(--window-bg); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; border: 2px solid var(--border-color); }
+        .verification-header { padding: 1.5rem; border-bottom: 2px solid var(--border-color); display: flex; align-items: center; gap: 1rem; }
+        .verification-header.status-verified { background-color: #e8f5e9; }
+        .verification-header.status-tampered { background-color: #fbe9e7; }
+        .verification-header h2 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+        .status-verified h2 { color: var(--success-color); }
+        .status-tampered h2 { color: var(--danger-color); }
+        
+        .product-details { padding: 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+        .detail-item { padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 2px solid var(--border-color); }
+        .detail-item .label { font-weight: 700; color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.25rem; display: block; }
+        .detail-item .value { font-weight: 600; font-size: 1.1rem; word-wrap: break-word; }
+        
+        .dispense-section { padding: 2rem; border-top: 2px solid var(--border-color); background: linear-gradient(135deg, #f8faff, #f2f5fc); }
+        .dispense-section fieldset { border: none; padding: 0; margin: 0; }
+        .dispense-section legend { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.5rem; padding: 0; width: 100%; }
+        .dispense-form-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 1.5rem; align-items: flex-end; }
+        .form-label { display: block; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .input-with-icon { position: relative; display: flex; align-items: center; }
+        .input-with-icon .fas { position: absolute; left: 15px; color: var(--text-secondary); font-size: 1rem; pointer-events: none; }
+        .input-with-icon input { padding-left: 40px; width: 100%; box-sizing: border-box; flex-grow: 1; padding-top: 15px; padding-bottom: 15px; font-size: 1.1rem; border: 2px solid var(--border-color); border-radius: 8px; transition: all 0.2s ease; background-color: #f8f9fa; }
+        .input-with-icon input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .dispense-btn { width: 100%; background-color: var(--success-color); box-shadow: 0 4px 10px rgba(56, 142, 60, 0.2); }
+        .dispense-btn:hover { background-color: #2E7D32; box-shadow: 0 7px 15px rgba(56, 142, 60, 0.3); }
+        
+        .timeline { padding: 1.5rem; border-top: 2px solid var(--border-color); }
+        .timeline h3 { margin-top: 0; margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 800; }
+        .timeline-items { position: relative; padding-left: 30px; }
+        .timeline-items::before { content: ''; position: absolute; left: 8px; top: 10px; bottom: 10px; width: 4px; background-color: var(--border-color); }
+        .timeline-item { position: relative; margin-bottom: 2rem; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-dot { position: absolute; left: -32px; top: 5px; width: 22px; height: 22px; border-radius: 50%; background-color: var(--chain-color); border: 4px solid var(--window-bg); box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+        .timeline-content { background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border: 2px solid var(--border-color); transition: all 0.3s ease; }
+        .timeline-content:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--chain-color); }
+        .timeline-action { font-size: 1.1rem; font-weight: 700; color: var(--chain-color); margin-bottom: 0.5rem; text-transform: capitalize; }
+        .timeline-actor { font-weight: 700; margin-bottom: 0.25rem; }
+        .timeline-details { color: var(--text-secondary); margin-bottom: 0.75rem; font-weight: 600; }
+        .timeline-meta { font-size: 0.85rem; color: #888; margin-bottom: 0.75rem; font-weight: 600; }
+        .timeline-hash { font-family: 'Roboto Mono', monospace; font-size: 0.85rem; background: #e9ecef; padding: 0.75rem; border-radius: 4px; word-break: break-all; margin-top: 1rem; }
+        .timeline-hash .label { font-weight: 700; color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.25rem; font-family: 'Poppins', sans-serif; }
+        .timeline-hash .value-hash { cursor: help; color: #333; }
+
+        .custom-select-wrapper { position: relative; width: 100%; }
+        .custom-select-trigger { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 15px 40px 15px 15px; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); background-color: #f8f9fa; border: 2px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
+        .custom-select-wrapper.open .custom-select-trigger { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .custom-select-trigger .fas { position: absolute; left: 15px; color: var(--text-secondary); font-size: 1rem; pointer-events: none; }
+        .custom-select-trigger .selected-value { padding-left: 25px; }
+        .custom-select-trigger::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); transition: transform 0.3s ease; color: var(--text-secondary); }
+        .custom-select-wrapper.open .custom-select-trigger::after { transform: translateY(-50%) rotate(180deg); }
+        .custom-options { position: absolute; top: 110%; left: 0; right: 0; background-color: var(--window-bg); border-radius: 8px; border: 2px solid var(--border-color); box-shadow: 0 10px 20px rgba(0,0,0,0.1); z-index: 10; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s; max-height: 200px; overflow-y: auto; }
+        .custom-select-wrapper.open .custom-options { opacity: 1; visibility: visible; transform: translateY(0); }
+        .custom-option { padding: 12px 20px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .custom-option:hover { background-color: var(--primary-color); color: white; }
+        .custom-option.selected { background-color: #e9f5ff; font-weight: 700; color: var(--primary-color); }
+
+        @media (max-width: 768px) {
+            .dispense-form-grid { grid-template-columns: 1fr; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="macos-browser-window">
+        <div class="macos-title-bar">
+            <div class="macos-buttons">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+        </div>
+        <main class="main-content">
+            <header class="header">
+                <img src="../assets/medchain_logo.svg" alt="MedChain Logo">
+                <h1>Hospital Verification Terminal</h1>
+                <p>Scan a product's unique identifier to verify its authenticity and dispense to a patient.</p>
+            </header>
+
+            <div id="message-area" role="alert"></div>
+
+            <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;">
+                <img src="hospital.png" alt="Hospital Illustration" style="max-width: 310px; max-height: 450px; border-radius: 16px;">
+                
+                <div class="scanner-card" style="flex: 1;">
+                    <form id="verifyForm" onsubmit="handleVerification(event)">
+                        <div class="form-group">
+                            <input type="text" id="unique_identifier" name="unique_identifier" placeholder="Enter or scan product identifier..." required>
+                            <button type="submit" class="btn">Verify</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="results-container"></div>
+        </main>
+    </div>
+
+    <script>
+        // --- Lenis Smooth Scroll Initialization ---
+        const lenis = new Lenis();
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // --- All other JavaScript functions ---
+        let currentHospitalId = null;
+        let verifiedProductData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const uidFromUrl = urlParams.get('uid');
+            currentHospitalId = urlParams.get('hospital_id');
+
+            if (uidFromUrl) {
+                document.getElementById('unique_identifier').value = uidFromUrl;
+                // REMOVED: The line below was causing the automatic submission.
+                // document.getElementById('verifyForm').requestSubmit(); 
+            }
+        });
+
+        function showMessage(message, type = 'error') {
+            const messageArea = document.getElementById('message-area');
+            messageArea.textContent = message;
+            messageArea.className = `message-area ${type}`;
+        }
+
+        async function handleVerification(e) {
+            e.preventDefault();
+            const identifier = document.getElementById('unique_identifier').value;
+            if (!identifier) return;
+
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.classList.remove('visible');
+            resultsContainer.innerHTML = `<p style="text-align:center; font-weight: 700;">Verifying...</p>`;
+            resultsContainer.classList.add('visible');
+
+            try {
+                const traceResponse = await fetch('../api/trace_product.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unique_identifier: identifier, hospital_id: currentHospitalId })
+                });
+                const traceData = await traceResponse.json();
+
+                if (!traceResponse.ok || !traceData.success) {
+                    throw new Error(traceData.message || 'Failed to verify product.');
+                }
+                
+                verifiedProductData = traceData; 
+                const verifiedProduct = verifiedProductData.product;
+                let mergedStock = 0;
+
+                if (currentHospitalId) {
+                    const allProductsResponse = await fetch(`../api/get_hospital_products.php?hospital_id=${currentHospitalId}`);
+                    const allProductsData = await allProductsResponse.json();
+
+                    if (allProductsData.success && allProductsData.products.length > 0) {
+                        allProductsData.products.forEach(p => {
+                            if (p.brand_name === verifiedProduct.brand_name && p.batch_number === verifiedProduct.batch_number) {
+                                mergedStock += parseInt(p.quantity, 10);
+                            }
+                        });
+                    }
+                } else {
+                    mergedStock = parseInt(verifiedProduct.stock_quantity, 10);
+                }
+                
+                const patientResponse = await fetch('../api/get_patients.php');
+                const patientData = await patientResponse.json();
+                if (!patientResponse.ok || !patientData.success) {
+                    throw new Error(patientData.message || 'Failed to load patient data.');
+                }
+
+                displayResults(verifiedProductData, patientData.patients, mergedStock);
+
+            } catch (error) {
+                console.error('Verification Error:', error);
+                resultsContainer.innerHTML = `<p style="text-align:center; color: red; font-weight: 700;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function displayResults(data, patients, mergedStock) {
+            const container = document.getElementById('results-container');
+            const { product, history } = data;
+            const isChainVerified = !history.some(log => log.status !== 'VERIFIED');
+
+            let historyHtml = history.map(log => {
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-action">${log.title}</div>
+                            <div class="timeline-actor"><strong>Actor:</strong> ${log.details.split(':')[0]}</div>
+                            <div class="timeline-details">${log.details}</div>
+                            <div class="timeline-meta">
+                                <span>${log.timestamp}</span>
+                                <span style="margin-left: 1rem; color: ${log.status === 'VERIFIED' ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight: bold;">${log.status}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const stockLabel = currentHospitalId ? "Your Current Stock" : "Total Stock on Record";
+            const stockQuantityToShow = mergedStock !== undefined ? mergedStock : product.stock_quantity;
+
+
+            let html = `
+                <div class="verification-card">
+                    <div class="verification-header ${isChainVerified ? 'status-verified' : 'status-tampered'}">
+                        <h2>${isChainVerified ? 'Product Authenticity Verified' : 'Chain Integrity Compromised'}</h2>
+                    </div>
+                    
+                    <div class="product-details">
+                        <div class="detail-item"><span class="label">Brand Name</span><div class="value">${product.brand_name || 'N/A'}</div></div>
+                        <div class="detail-item"><span class="label">Generic Name</span><div class="value">${product.generic_name || 'N/A'}</div></div>
+                        <div class="detail-item"><span class="label">Manufacturer</span><div class="value">${product.manufacturer_name || 'N/A'}</div></div>
+                        <div class="detail-item"><span class="label">Batch Number</span><div class="value">${product.batch_number || 'N/A'}</div></div>
+                        <div class="detail-item"><span class="label">Expiry Date</span><div class="value">${new Date(product.expiry_date).toLocaleDateString('en-GB')}</div></div>
+                        <div class="detail-item"><span class="label">${stockLabel}</span><div class="value"><strong>${stockQuantityToShow}</strong> units</div></div>
+                    </div>
+            `;
+
+            if (isChainVerified && stockQuantityToShow > 0 && currentHospitalId) {
+                let patientOptions = patients.map(p => `
+                    <div class="custom-option" data-value="${p.user_id}">
+                        <i class="fas fa-user-circle"></i>
+                        <span>${p.full_name} (${p.username})</span>
+                    </div>
+                `).join('');
+
+                html += `
+                    <div class="dispense-section">
+                        <form id="dispenseForm" onsubmit="handleDispense(event)">
+                            <fieldset>
+                                <legend>Record Dispensation</legend>
+                                <div class="dispense-form-grid">
+                                    <div class="form-control-wrapper">
+                                        <label class="form-label">Dispense To Patient</label>
+                                        <div class="custom-select-wrapper">
+                                            <div class="custom-select-trigger">
+                                                <i class="fas fa-user"></i>
+                                                <span class="selected-value">Select a patient...</span>
+                                            </div>
+                                            <div class="custom-options">${patientOptions}</div>
+                                            <input type="hidden" name="patient_id" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-control-wrapper">
+                                        <label for="quantity" class="form-label">Quantity</label>
+                                        <div class="input-with-icon">
+                                            <i class="fas fa-hashtag"></i>
+                                            <input type="number" name="quantity" id="quantity" placeholder="Qty" required min="1" max="${stockQuantityToShow}">
+                                        </div>
+                                    </div>
+                                    <div class="form-control-wrapper">
+                                        <button type="submit" class="btn dispense-btn">
+                                            <i class="fas fa-pills"></i>
+                                            Dispense
+                                        </button>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+                `;
+            } else if (isChainVerified) {
+                 html += `<div class="dispense-section"><p style="text-align:center; font-weight:700;">This product is out of stock or cannot be dispensed from this terminal.</p></div>`;
+            }
+
+            if (history && history.length > 0) {
+                html += `
+                    <div class="timeline">
+                        <h3>Blockchain Audit Trail</h3>
+                        <div class="timeline-items">
+                            ${historyHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+            container.classList.add('visible');
+            initializeCustomSelect();
+        }
+
+        function initializeCustomSelect() {
+            const selectWrapper = document.querySelector('.custom-select-wrapper');
+            if (!selectWrapper) return;
+
+            const trigger = selectWrapper.querySelector('.custom-select-trigger');
+            const options = selectWrapper.querySelectorAll('.custom-option');
+            const hiddenInput = selectWrapper.querySelector('input[name="patient_id"]');
+            const selectedValueDisplay = trigger.querySelector('.selected-value');
+
+            trigger.addEventListener('click', () => {
+                selectWrapper.classList.toggle('open');
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hiddenInput.value = option.getAttribute('data-value');
+                    selectedValueDisplay.textContent = option.textContent.trim();
+                    options.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectWrapper.classList.remove('open');
+                });
+            });
+
+            window.addEventListener('click', (e) => {
+                if (!selectWrapper.contains(e.target)) {
+                    selectWrapper.classList.remove('open');
+                }
+            });
+        }
+        
+        async function handleDispense(e) {
+            e.preventDefault();
+            const form = e.target;
+            const dispenseButton = form.querySelector('button[type="submit"]');
+            
+            const patientId = form.querySelector('input[name="patient_id"]').value;
+            const quantity = form.querySelector('input[name="quantity"]').value;
+            const selectedPatientOption = form.querySelector(`.custom-option[data-value="${patientId}"] span`).textContent;
+
+            if (!patientId) {
+                showMessage('Please select a patient before dispensing.', 'error');
+                return;
+            }
+
+            dispenseButton.disabled = true;
+            dispenseButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recording...';
+
+            try {
+                const response = await fetch('../api/dispense_from_hospital.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: verifiedProductData.product.product_id,
+                        hospital_id: currentHospitalId,
+                        patient_name: selectedPatientOption.split('(')[0].trim(), // Extract name
+                        patient_id: patientId,
+                        quantity: quantity
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('Product dispensed and recorded on the chain.', 'success');
+                    document.getElementById('verifyForm').requestSubmit();
+                } else {
+                    throw new Error(result.message || 'The operation failed.');
+                }
+                
+            } catch (error) {
+                console.error('Dispense Error Details:', error);
+                showMessage(error.message, 'error');
+            } finally {
+                dispenseButton.disabled = false;
+                dispenseButton.innerHTML = '<i class="fas fa-pills"></i> Dispense';
+            }
+        }
+    </script>
+</body>
+</html>

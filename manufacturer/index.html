@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - MedChain</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.5/dist/lenis.min.js"></script>
+
+    <style>
+        /* --- macOS Window Theme --- */
+        :root {
+            --primary-color: #007AFF; /* macOS Accent Blue */
+            --primary-hover: #0056b3;
+            --primary-glow: rgba(0, 122, 255, 0.2);
+            --bg-color: #e9e9e9; /* Light gray background */
+            --window-bg: #FFFFFF;
+            --sidebar-bg: rgba(242, 242, 247, 0.95); /* Translucent sidebar */
+            --text-primary: #1D1D1F;
+            --text-secondary: #6E6E73;
+            --border-color: rgba(60, 60, 67, 0.29);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --danger-color: #FF3B30;
+            --warning-bg: #FFFBEA;
+            --warning-text: #D97706;
+            --success-bg: #F0FDF4;
+            --success-text: #16A34A;
+            --urgent-color: #FF3B30;
+        }
+
+        /* --- Base & Layout --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Lenis smooth scroll styles */
+        html.lenis { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+        /* --- macOS Window Container --- */
+        .macos-browser-window {
+            max-width: 1600px;
+            height: 90vh;
+            margin: 3rem auto; /* Creates the gap around the window */
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background-color: var(--window-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- macOS Title Bar --- */
+        .macos-title-bar {
+            background-color: #f6f6f6;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color); /* Thicker */
+            flex-shrink: 0;
+        }
+        .macos-buttons { display: flex; gap: 8px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        /* --- Main Dashboard Layout (Sidebar + Content) --- */
+        .dashboard-body {
+            display: flex;
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden; /* Prevent body from showing scrollbars */
+        }
+        
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 2px solid var(--border-color); /* Thicker */
+            flex-shrink: 0;
+            z-index: 1000;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 2px solid var(--border-color); /* Thicker */
+            flex-shrink: 0;
+        }
+        .sidebar-header .logo-icon { width: 40px; height: 40px; }
+        .sidebar-header h1 { font-size: 1.5rem; margin: 0; font-weight: 800; } /* Bolder */
+        .sidebar-nav { list-style: none; padding: 1.5rem 0; margin: 0; flex-grow: 1; overflow-y: auto; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar-nav a {
+            display: flex; align-items: center; gap: 15px;
+            padding: 0.8rem 1.5rem; margin: 0.25rem 1rem;
+            color: var(--text-secondary); text-decoration: none;
+            font-weight: 600; border-radius: 8px; transition: all 0.2s ease; /* Bolder */
+        }
+        .sidebar-nav a:hover { background-color: rgba(128, 128, 128, 0.1); color: var(--primary-color); }
+        .sidebar-nav a.active {
+            background: var(--primary-color); color: #FFFFFF; font-weight: 700; /* Bolder */
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+        .sidebar-nav a .icon { width: 22px; height: 22px; }
+        
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem;
+            box-sizing: border-box;
+            height: 100%;
+            overflow-y: auto; /* This is where the scrolling happens */
+        }
+
+        /* --- Card and Component Styling --- */
+        .card { 
+            background-color: var(--window-bg); 
+            padding: 1.5rem; 
+            border-radius: 12px; 
+            border: 2px solid var(--border-color); /* Thicker */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border-color); } /* Thicker */
+        .card-header .icon { width: 24px; height: 24px; color: var(--primary-color); }
+        .card-header h3 { margin: 0; font-size: 1.2rem; font-weight: 700; } /* Bolder */
+        .metric-card .label { font-size: 1rem; color: var(--text-secondary); margin: 0; font-weight: 600; } /* Bolder */
+        .metric-card .value { font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin: 0.5rem 0; } /* Bolder */
+        .metric-card .value.danger { color: var(--danger-color); }
+        .activity-card { grid-column: 1 / -1; } 
+        .activity-table { width: 100%; border-collapse: collapse; }
+        .activity-table th, .activity-table td { padding: 12px 10px; text-align: left; border-bottom: 2px solid var(--border-color); font-size: 0.9rem; vertical-align: middle; } /* Thicker */
+        .activity-table th { font-weight: 700; color: var(--text-secondary); background-color: #F9FAFB; text-transform: uppercase; letter-spacing: 0.5px;} /* Bolder */
+        .activity-table tr:last-child td { border-bottom: none; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: .5rem; font-weight: 700; } /* Bolder */
+        .form-group input, .form-group select { width: 100%; padding: .75rem; border: 2px solid var(--border-color); border-radius: 8px; box-sizing: border-box; background-color: #fefefe; font-family: inherit; } /* Thicker */
+        .btn-primary { background-color: var(--primary-color); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s ease; } /* Bolder */
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .notification { display: none; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; font-weight: 500; border: 1px solid transparent; }
+        .notification.success { background-color: var(--success-bg); color: var(--success-text); border-color: var(--success-text); }
+        .notification.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .notification.info { background-color: #e2e3e5; color: #383d41; border-color: #d6d8db; }
+        .message-list { max-height: 500px; overflow-y: auto; padding: 1rem; }
+        .message-item { display: flex; gap: 1rem; padding: 1.25rem; margin-bottom: 1rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06); position: relative; transition: all 0.4s ease; max-height: 500px; opacity: 1; }
+        .message-item.unread { border-left: 4px solid var(--primary-color); }
+        .message-avatar { flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; }
+        .message-avatar.urgent { background-color: var(--urgent-color); }
+        .message-content { flex-grow: 1; cursor: pointer; }
+        .message-header { display: flex; justify-content: space-between; align-items: baseline; }
+        .message-sender { font-weight: 800; color: var(--text-primary); } /* Bolder */
+        .message-time { font-size: 0.8rem; color: var(--text-secondary); }
+        .message-subject { margin: 0.25rem 0; font-weight: 700; } /* Bolder */
+        .message-body { font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; transition: max-height 0.4s ease-in-out; max-height: 20px; } /* Bolder */
+        .message-body.expanded { white-space: normal; overflow: visible; max-height: 200px; }
+        .message-actions { display: flex; align-items: center; }
+        .mark-read-btn { background: transparent; border: 2px solid var(--border-color); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 0.8rem; transition: all 0.3s ease; } /* Thicker & Bolder */
+        .mark-read-btn:hover { background-color: var(--success-bg); color: var(--success-text); border-color: var(--success-text); }
+        .message-item.disappearing { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; transform: scale(0.95) translateX(30px); pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div class="macos-browser-window">
+        <div class="macos-title-bar">
+            <div class="macos-buttons">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+        </div>
+        
+        <div class="dashboard-body">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <img src="../assets/medchain_logo.svg" alt="MedChain Logo" class="logo-icon">
+                    <h1>MedChain</h1>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li><a href="index.html" class="active"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Dashboard</span></a></li>
+                        <li><a href="register.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Add Product</span></a></li>
+                        <li><a href="history.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg><span>History</span></a></li>
+                        <li><a href="audit.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Audit Inspector</span></a></li>
+                        <li><a href="http://localhost/blockchain/"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v2"/><path d="M15 18H9"/><path d="M15 22H9"/><path d="M12 14v8"/></svg><span>Home Page</span></a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="main-content">
+                <header class="dashboard-header">
+                    <h2 style="font-size: 2.25rem; font-weight: 800; margin: 0; color: var(--text-primary);">Admin Overview</h2>
+                    <input type="hidden" id="current-user-id" value="1">
+                </header>
+
+                <div class="dashboard-grid">
+                    <div id="alert-container" style="grid-column: 1 / -1;"></div>
+
+                    <a href="users.php" class="card metric-card" style="text-decoration:none; margin-bottom: 0;">
+                        <p class="label">Total Users</p>
+                        <p class="value" id="total-users">0</p>
+                    </a>
+                    <div class="card metric-card" style="margin-bottom: 0;"><p class="label">Total Products</p><p class="value" id="total-products">0</p></div>
+                    <div class="card metric-card" style="margin-bottom: 0;"><p class="label">Audit Trail Logs</p><p class="value" id="total-logs">0</p></div>
+                    <div class="card metric-card" style="margin-bottom: 0;"><p class="label">Chain Issues</p><p class="value danger" id="chain-issues">0</p></div>
+
+                    <div class="card activity-card">
+                        <div class="card-header">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            <h3>Inbox</h3>
+                        </div>
+                        <div id="message-list-container" class="message-list">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                    </div>
+
+                    <div class="card activity-card">
+                        <div class="card-header">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            <h3>Product Supply Chain Analysis</h3>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <form id="analysis-form" style="display: flex; gap: 1rem; max-width: 600px; margin-bottom: 2rem; align-items: flex-end;">
+                                <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                                    <label for="unique-identifier">Enter Product Unique Identifier:</label>
+                                    <input type="text" id="unique-identifier" placeholder="e.g., 24abc123-def456-..." required>
+                                </div>
+                                <button type="submit" class="btn-primary">Analyze</button>
+                            </form>
+                            <div id="analysis-notification" class="notification"></div>
+                            <div id="analysis-results" style="display: none;">
+                                <div id="analysis-product-info" style="margin-bottom: 2rem;"></div>
+                                <div class="analysis-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: center;">
+                                    <div id="analysis-chart-container" style="position: relative; height: 250px; width: 250px; margin: auto;">
+                                        <canvas id="stock-chart"></canvas>
+                                    </div>
+                                    <div id="analysis-metrics"></div>
+                                </div>
+                                 <div id="analysis-history" style="margin-top: 2rem;">
+                                    <h4 style="border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">Patient Dispensation History</h4>
+                                    <div style="overflow-x:auto;">
+                                        <table class="activity-table">
+                                            <thead><tr><th>Patient</th><th>Pharmacist</th><th>Quantity</th><th>Timestamp</th></tr></thead>
+                                            <tbody id="purchase-history-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card activity-card">
+                        <div class="card-header">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                            </svg>
+                            <h3>Dispense to Distributor</h3>
+                        </div>
+                        <div style="padding: 1rem;">
+                            <div id="dispense-notification" class="notification"></div>
+                            <form id="dispense-form" style="display: grid; gap: 1rem; max-width: 500px;">
+                                <div class="form-group">
+                                    <label for="product-select">Select Product:</label>
+                                    <select id="product-select" required>
+                                        <option value="">Loading products...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dispense-quantity">Quantity to Dispense:</label>
+                                    <input type="number" id="dispense-quantity" min="1" required>
+                                </div>
+                                <div id="product-info" style="background: var(--bg-color); padding: 1rem; border-radius: 8px; display: none; border: 2px solid var(--border-color);">
+                                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; font-weight: 700;">Product Details:</h4>
+                                    <div id="product-details" style="font-size: 0.9rem;"></div>
+                                </div>
+                                <button type="submit" class="btn-primary">Dispense to Distributor</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card activity-card">
+                        <div class="card-header">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M12 14v4"/><path d="M12 18h.01"/></svg>
+                            <h3>Products Nearing Expiry</h3>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Brand Name</th>
+                                        <th>Batch Number</th>
+                                        <th>Expiry Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expiring-products-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card activity-card">
+                        <div class="card-header">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--danger-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <h3>Chain Integrity Issues</h3>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Log ID</th>
+                                        <th>Status</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="chain-issues-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="card activity-card">
+                        <div class="card-header"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><h3>Latest System Activity</h3></div>
+                        <div style="overflow-x:auto;"><table class="activity-table"><thead><tr><th>Timestamp</th><th>Actor</th><th>Action</th><th>Details</th></tr></thead><tbody id="recent-activity-body"></tbody></table></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // --- Lenis Smooth Scroll Initialization ---
+        const lenis = new Lenis({
+            wrapper: document.querySelector('.main-content'),
+        });
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // --- All other JavaScript functions ---
+        let stockChart = null;
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('../api/get_admin_data.php')
+                .then(response => {
+                    if (!response.ok) { throw new Error(`Network response was not ok: ${response.statusText}`); }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        populateMetrics(data.metrics);
+                        populateRecentActivity(data.recentActivity);
+                        displayAlerts(data.alerts);
+                        populateExpiryTable(data.expiringProducts);
+                        populateChainIssuesTable(data.chainIssueDetails);
+                    } else {
+                        console.error('API Error:', data.message || 'The API did not report success.');
+                    }
+                })
+                .catch(error => console.error('Fatal Error fetching admin data:', error));
+            
+            loadProductsForDispense();
+            loadMessages();
+            setInterval(loadMessages, 30000);
+
+            document.getElementById('dispense-form').addEventListener('submit', handleDispenseSubmit);
+            document.getElementById('product-select').addEventListener('change', handleProductSelection);
+            document.getElementById('analysis-form').addEventListener('submit', handleAnalysisSearch);
+        });
+
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                element.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function populateMetrics(metrics) {
+            if (!metrics) return;
+            animateValue(document.getElementById('total-users'), 0, metrics.total_users ?? 0, 1500);
+            animateValue(document.getElementById('total-products'), 0, metrics.total_products ?? 0, 1500);
+            animateValue(document.getElementById('total-logs'), 0, metrics.total_logs ?? 0, 1500);
+            animateValue(document.getElementById('chain-issues'), 0, metrics.chain_issues ?? 0, 1500);
+        }
+
+        function populateRecentActivity(activity) {
+            const tbody = document.getElementById('recent-activity-body');
+            tbody.innerHTML = ''; 
+            if (!activity || activity.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">No recent activity found.</td></tr>';
+                return;
+            }
+            activity.forEach(log => {
+                const logDate = new Date(log.log_timestamp).toLocaleString("en-US", { dateStyle: 'medium', timeStyle: 'short' });
+                const details = (log.details && typeof log.details === 'string') ? JSON.parse(log.details) : {};
+                let detailString = `Product ID: ${log.product_id}`;
+                if (details.brand_name) {
+                    const qty = details.dispensed_quantity || details.quantity;
+                    detailString = `<strong>${details.brand_name}</strong> (Batch: ${details.batch_number || 'N/A'}) - Qty: ${qty || 'N/A'}`;
+                }
+                tbody.innerHTML += `<tr>
+                    <td>${logDate}</td>
+                    <td>${log.actor_name || 'System'} <span class="actor-id">(${log.actor_id})</span></td>
+                    <td style="text-transform: capitalize;">${(log.action || '').replace(/_/g, ' ').toLowerCase()}</td>
+                    <td>${detailString}</td>
+                </tr>`;
+            });
+        }
+
+        function populateExpiryTable(products) {
+            const tbody = document.getElementById('expiring-products-body');
+            tbody.innerHTML = '';
+            if (!products || products.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 2rem;">No products are nearing expiry.</td></tr>';
+                return;
+            }
+            products.forEach(product => {
+                tbody.innerHTML += `<tr>
+                    <td><strong>${product.brand_name || 'N/A'}</strong></td>
+                    <td>${product.batch_number || 'N/A'}</td>
+                    <td>${new Date(product.expiry_date).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                </tr>`;
+            });
+        }
+
+        function populateChainIssuesTable(issues) {
+            const tbody = document.getElementById('chain-issues-body');
+            tbody.innerHTML = '';
+            if (!issues || issues.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 2rem;">No chain integrity issues found.</td></tr>';
+                return;
+            }
+            issues.forEach(issue => {
+                tbody.innerHTML += `<tr>
+                    <td>${issue.log_id}</td>
+                    <td><span style="color: var(--danger-color); font-weight: bold;">${issue.status || 'ERROR'}</span></td>
+                    <td>${issue.message || 'An unspecified error was found.'}</td>
+                </tr>`;
+            });
+        }
+
+        function displayAlerts(alerts) {
+            const container = document.getElementById('alert-container');
+            if (alerts && alerts.chain_integrity_issue) {
+                container.innerHTML = `<div class="card" style="background-color: var(--warning-bg); border-left: 4px solid var(--warning-text);">
+                    <div class="card-header" style="color: var(--warning-text);">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <h3>CRITICAL ALERT</h3>
+                    </div>
+                    <p style="margin: 0; font-weight: 500;">A hash mismatch was detected in the audit trail. The integrity of the blockchain is compromised. Please review the issues below and run a full chain verification.</p>
+                </div>`;
+            }
+        }
+        
+        async function loadProductsForDispense() {
+            try {
+                const response = await fetch('../api/get_products.php'); 
+                const data = await response.json();
+                const select = document.getElementById('product-select');
+                select.innerHTML = '<option value="">Select a product...</option>';
+                if (data.success && data.products) {
+                    data.products.forEach(product => {
+                        if (product.stock_quantity > 0) { 
+                            const option = document.createElement('option');
+                            option.value = product.product_id;
+                            option.textContent = `${product.brand_name} (Batch: ${product.batch_number}) - Available: ${product.stock_quantity}`;
+                            option.dataset.product = JSON.stringify(product);
+                            select.appendChild(option);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading products for dispense form:', error);
+                document.getElementById('product-select').innerHTML = '<option value="">Error loading products</option>';
+            }
+        }
+        
+        function handleProductSelection(event) {
+            const select = event.target;
+            const selectedOption = select.options[select.selectedIndex];
+            const productInfo = document.getElementById('product-info');
+            const productDetails = document.getElementById('product-details');
+            const quantityInput = document.getElementById('dispense-quantity');
+            
+            if (selectedOption.dataset.product) {
+                const product = JSON.parse(selectedOption.dataset.product);
+                productDetails.innerHTML = `
+                    <p style="margin:0.25rem 0;"><strong>Brand:</strong> ${product.brand_name}</p>
+                    <p style="margin:0.25rem 0;"><strong>Batch:</strong> ${product.batch_number}</p>
+                    <p style="margin:0.25rem 0;"><strong>Available:</strong> ${product.stock_quantity}</p>
+                    <p style="margin:0.25rem 0;"><strong>Expires:</strong> ${new Date(product.expiry_date).toLocaleDateString()}</p>
+                `;
+                quantityInput.max = product.stock_quantity;
+                productInfo.style.display = 'block';
+            } else {
+                productInfo.style.display = 'none';
+                quantityInput.max = '';
+            }
+        }
+        
+        async function handleDispenseSubmit(event) {
+            event.preventDefault();
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const productId = document.getElementById('product-select').value;
+            const quantity = parseInt(document.getElementById('dispense-quantity').value);
+            
+            if (!productId || !quantity || quantity <= 0) {
+                showNotification('dispense-notification', 'Please select a product and enter a valid quantity.', 'error');
+                return;
+            }
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+
+            try {
+                const response = await fetch('../api/dispense_to_distributor.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: productId, quantity: quantity })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showNotification('dispense-notification', `Success! ${data.dispensed_quantity} units dispensed. Remaining: ${data.remaining_quantity}. Page will refresh.`, 'success');
+                    setTimeout(() => location.reload(), 2500);
+                } else {
+                    showNotification('dispense-notification', 'Error: ' + (data.message || 'Unknown error'), 'error');
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Dispense to Distributor';
+                }
+            } catch (error) {
+                console.error('Dispense Submit Error:', error);
+                showNotification('dispense-notification', 'A critical error occurred. See console for details.', 'error');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Dispense to Distributor';
+            }
+        }
+
+        async function handleAnalysisSearch(event) {
+            event.preventDefault();
+            const resultsContainer = document.getElementById('analysis-results');
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const identifier = document.getElementById('unique-identifier').value;
+
+            if (!identifier) {
+                showNotification('analysis-notification', 'Please enter a Unique Identifier.', 'error');
+                return;
+            }
+
+            resultsContainer.style.display = 'none';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Analyzing...';
+            showNotification('analysis-notification', 'Fetching data...', 'info');
+
+            try {
+                const response = await fetch('../api/get_product_analysis.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unique_identifier: identifier })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('analysis-notification').style.display = 'none';
+                    displayAnalysisResults(data);
+                    resultsContainer.style.display = 'block';
+                } else {
+                    showNotification('analysis-notification', `Error: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Analysis Search Error:', error);
+                showNotification('analysis-notification', 'A critical network error occurred.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Analyze';
+            }
+        }
+
+        function displayAnalysisResults(data) {
+            const { product_info, analysis, purchase_history } = data;
+            document.getElementById('analysis-product-info').innerHTML = `
+                <h3 style="margin: 0; font-size: 1.5rem; color: var(--text-primary);">${product_info.brand_name}</h3>
+                <p style="margin: 0.25rem 0; color: var(--text-secondary); font-family: 'Roboto Mono', monospace;">Batch: ${product_info.batch_number}</p>
+            `;
+            document.getElementById('analysis-metrics').innerHTML = `
+                <div style="font-size: 1.2rem; margin-bottom: 1rem;"><strong>Total Supply:</strong> <span style="color: var(--primary-color); font-weight: 600;">${analysis.total_supply} units</span></div>
+                <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">Consumed by Patients: ${analysis.total_consumed}</div>
+                <div style="font-size: 1.1rem;">Remaining in Stock: ${analysis.remaining_stock}</div>
+            `;
+            const ctx = document.getElementById('stock-chart').getContext('2d');
+            if (stockChart) { stockChart.destroy(); }
+            stockChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Consumed', 'Remaining Stock'],
+                    datasets: [{
+                        data: [analysis.total_consumed, analysis.remaining_stock],
+                        backgroundColor: ['#FFB74D', '#81C784'],
+                        borderColor: ['#FB8C00', '#558B2F'],
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Stock Distribution' } } }
+            });
+            const historyBody = document.getElementById('purchase-history-body');
+            historyBody.innerHTML = '';
+            if (purchase_history.length > 0) {
+                purchase_history.forEach(item => {
+                    historyBody.innerHTML += `
+                        <tr>
+                            <td>${item.patient_name}</td>
+                            <td>${item.pharmacist_name}</td>
+                            <td>${item.quantity}</td>
+                            <td>${item.timestamp}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                historyBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 2rem;">No patient dispensation records found.</td></tr>';
+            }
+        }
+
+        function showNotification(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            el.textContent = message;
+            el.className = `notification ${type}`;
+        }
+
+        async function loadMessages() {
+            const userId = document.getElementById('current-user-id').value;
+            const container = document.getElementById('message-list-container');
+
+            try {
+                const response = await fetch(`../api/get_messages.php?user_id=${userId}`);
+                const data = await response.json();
+
+                if (data.success && data.messages) {
+                    renderMessages(data.messages);
+                } else {
+                    container.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">No messages found.</p>`;
+                }
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                container.innerHTML = `<p style="text-align:center; padding: 2rem; color:red;">Failed to load messages.</p>`;
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('message-list-container');
+            container.innerHTML = ''; 
+
+            const unreadMessages = messages.filter(msg => !msg.read_status);
+
+            if (unreadMessages.length === 0) {
+                 container.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">Your inbox is empty.</p>`;
+                 return;
+            }
+
+            unreadMessages.forEach(msg => {
+                const initial = msg.sender_name.charAt(0).toUpperCase();
+                const time = new Date(msg.timestamp).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', month: 'short', day: 'numeric' });
+                const isUrgent = msg.priority === 'Urgent';
+
+                const messageEl = document.createElement('div');
+                messageEl.className = `message-item unread`;
+                messageEl.dataset.messageId = msg.message_id;
+
+                messageEl.innerHTML = `
+                    <div class="message-avatar ${isUrgent ? 'urgent' : ''}">${initial}</div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-sender">${msg.sender_name} (${msg.sender_role})</span>
+                            <span class="message-time">${time}</span>
+                        </div>
+                        <p class="message-subject">${isUrgent ? `<strong style="color:var(--urgent-color)">[URGENT]</strong> ` : ''}${msg.subject}</p>
+                        <p class="message-body">${msg.message_content}</p>
+                    </div>
+                    <div class="message-actions">
+                        <button class="mark-read-btn">✓ Mark as Read</button>
+                    </div>
+                `;
+                
+                messageEl.querySelector('.message-content').addEventListener('click', () => {
+                    messageEl.querySelector('.message-body').classList.toggle('expanded');
+                });
+                
+                const markReadBtn = messageEl.querySelector('.mark-read-btn');
+                markReadBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    messageEl.classList.add('disappearing');
+                    markMessageAsRead(msg.message_id);
+                    messageEl.addEventListener('transitionend', () => {
+                        messageEl.remove();
+                        if (container.children.length === 0) {
+                            container.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary);">Your inbox is empty.</p>`;
+                        }
+                    });
+                });
+
+                container.appendChild(messageEl);
+            });
+        }
+
+        async function markMessageAsRead(messageId) {
+            const userId = document.getElementById('current-user-id').value;
+            try {
+                const response = await fetch('../api/mark_message_read.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: messageId, user_id: userId })
+                });
+                const data = await response.json();
+                if(!data.success) {
+                    console.error('API failed to mark message as read:', data.message);
+                }
+            } catch (error) {
+                console.error('Failed to mark message as read:', error);
+            }
+        }
+    </script>
+
+</body>
+</html>
