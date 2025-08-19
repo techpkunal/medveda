@@ -67,6 +67,7 @@ try {
     $total_produced = 0;
     $total_dispensed_from_manufacturer = 0;
     $with_distributor = 0;
+    $with_hospital = 0;
     $with_pharmacist = 0;
     $consumed = 0;
     $timeline = [];
@@ -89,6 +90,14 @@ try {
             case 'PRODUCT_SOLD_TO_PHARMACIST':
                 $with_distributor -= $quantity;
                 $with_pharmacist += $quantity;
+                break;
+            case 'PRODUCT_SOLD_TO_HOSPITAL':
+                $with_distributor -= $quantity;
+                $with_hospital += $quantity;
+                break;
+            case 'PRODUCT_DISPENSED_FROM_HOSPITAL':
+                $with_hospital -= $quantity;
+                $consumed += $quantity;
                 break;
             case 'PRODUCT_DISPENSED_TO_PATIENT':
                 $with_pharmacist -= $quantity;
@@ -129,6 +138,7 @@ try {
             'at_manufacturer' => $at_manufacturer, // Added this new metric
             'produced' => $total_produced,
             'with_distributor' => $with_distributor,
+            'with_hospital' => $with_hospital,
             'with_pharmacist' => $with_pharmacist,
             'consumed' => $consumed
         ],

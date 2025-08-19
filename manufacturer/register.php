@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Product - MedChain</title>
+    <title>Register Product - MedVeda</title>
     
     <script src="https://unpkg.com/lenis@1.1.5/dist/lenis.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
         /* --- macOS Window Theme --- */
@@ -155,15 +156,17 @@
             box-shadow: 0 0 0 3px var(--primary-glow);
         }
         
-        .btn-primary {
+        .btn {
+            display: inline-block;
             background-color: var(--primary-color); color: white;
             padding: 14px 28px; text-decoration: none; border-radius: 8px;
             font-weight: 700; transition: all 0.2s ease;
             border: none; cursor: pointer;
             box-shadow: 0 4px 12px var(--primary-glow);
             width: 100%; font-size: 1.1rem; margin-top: 1rem;
+            text-align: center;
         }
-        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+        .btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
         
         .alert { padding: 1rem 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; font-weight: 600; border: 1px solid transparent; }
         .alert-success { color: var(--success-text); background-color: var(--success-bg); border-color: var(--success-text); }
@@ -190,16 +193,21 @@
             <aside class="sidebar">
                 <div class="sidebar-header">
                     <img src="../assets/medchain_logo.svg" alt="MedChain Logo" class="logo-icon">
-                    <h1>MedChain</h1>
+                    <h1>MedVeda</h1>
                 </div>
-                <nav class="sidebar-nav">
-                    <ul>
-                        <li><a href="index.html"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Dashboard</span></a></li>
-                        <li><a href="register.php" class="active"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Add Product</span></a></li>
-                        <li><a href="history.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg><span>Full History</span></a></li>
-                        <li><a href="audit.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Audit Inspector</span></a></li>
-                    </ul>
-                </nav>
+               <nav class="sidebar-nav">
+    <ul>
+        <li><a href="index.html"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Dashboard</span></a></li>
+        <li><a href="register.php" class="active"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Add Product</span></a></li>
+        <li><a href="live_tracking.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg><span>Logistic & Tracking</span></a></li>
+        <li><a href="history.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg><span>Full History</span></a></li>
+        <li><a href="audit.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span>Audit Inspector</span></a></li>
+        <li><a href="analysis.php"><svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg><span>Trace & Analysis</span></a></li>
+        <li><a href="http://localhost/block/"><svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l5 5v2"/><path d="M15 18H9"/><path d="M15 22H9"/><path d="M12 14v8"/></svg><span>Home Page</span></a></li>
+    </ul>
+</nav>
+
+
             </aside>
 
             <main class="main-content">
@@ -209,11 +217,21 @@
 
                 <div class="card">
                     <?php
+                    // This block handles the response after form submission
                     if (isset($_GET['status'])) {
                         if ($_GET['status'] == 'success') {
                             echo '<div class="alert alert-success"><strong>Success!</strong> The product has been registered on the blockchain.</div>';
                             if (isset($_GET['uid'])) {
-                                echo '<div class="alert alert-info"><strong>Product Unique Identifier:</strong><span class="unique-id">' . htmlspecialchars($_GET['uid']) . '</span></div>';
+                                $uid = htmlspecialchars($_GET['uid']);
+                                // IMPORTANT: Your form processing script (register_product.php) must redirect back here
+                                // with both the `uid` and the `batch` number to make this work automatically.
+                                // Example redirect: header("Location: register.php?status=success&uid=...&batch=...");
+                                $serial = isset($_GET['batch']) ? htmlspecialchars($_GET['batch']) : 'N/A';
+                                
+                                echo '<div class="alert alert-info"><strong>Product Unique Identifier:</strong><span class="unique-id">' . $uid . '</span></div>';
+                                
+                                // NEW: Button to generate the hologram sticker, passing UID and Serial Number
+                                echo '<a href="medvedabox.html?uid=' . urlencode($uid) . '&serial=' . urlencode($serial) . '" target="_blank" class="btn">Create Hologram QR Code</a>';
                             }
                         } elseif ($_GET['status'] == 'error') {
                              echo '<div class="alert alert-error"><strong>Error!</strong> Could not register the product. Please check the details and try again.</div>';
@@ -313,7 +331,7 @@
                             </div>
                         </fieldset>
 
-                        <button type="submit" class="btn-primary">Register Product on Chain</button>
+                        <button type="submit" class="btn">Register Product on Chain</button>
                     </form>
                 </div>
             </main>

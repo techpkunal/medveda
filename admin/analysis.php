@@ -302,6 +302,7 @@
                 <div class="card metric-card" style="margin-bottom:0;"><p class="label">Total Produced</p><p class="value">${supply_summary.produced}</p></div>
                 <div class="card metric-card" style="margin-bottom:0;"><p class="label">At Manufacturer</p><p class="value">${supply_summary.at_manufacturer}</p></div>
                 <div class="card metric-card" style="margin-bottom:0;"><p class="label">With Distributor</p><p class="value">${supply_summary.with_distributor}</p></div>
+                <div class="card metric-card" style="margin-bottom:0;"><p class="label">With Hospital</p><p class="value">${supply_summary.with_hospital}</p></div>
                 <div class="card metric-card" style="margin-bottom:0;"><p class="label">With Pharmacist</p><p class="value">${supply_summary.with_pharmacist}</p></div>
                 <div class="card metric-card" style="margin-bottom:0;"><p class="label">Consumed by Patient</p><p class="value">${supply_summary.consumed}</p></div>
             `;

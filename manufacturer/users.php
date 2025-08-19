@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - MedChain</title>
+    <title>User Management - MedVeda</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
         /* --- THEME APPLIED FROM INDEX.HTML --- */
@@ -100,6 +100,7 @@
         .role-distributor { background-color: var(--distributor-color); }
         .role-pharmacist { background-color: var(--primary-hover); }
         .role-patient { background-color: var(--text-secondary); }
+        .role-hospital { background-color: #FFC107; } /* Example color for Hospital role */
     </style>
 </head>
 <body>
